@@ -75,3 +75,4 @@ class UpgradeRemover {
 	private:
 		std::map<int, std::vector<bool>> StoryUpgradesTable;
 };
+

@@ -5,10 +5,12 @@
 #include <imgui_impl_win32.h>
 #include "magic.h"
 #include "upgraderemover.h"
+#include "settings.h"
 
 extern "C"
 {
 	static UpgradeRemover* UpgradeR = new UpgradeRemover();
+	static Settings* settings = new Settings();
 
 
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
@@ -19,8 +21,9 @@ extern "C"
 		ImGui_ImplWin32_Init(MainWindowHandle);
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
-		//for the window message handling for imgui
-		initHooks();
+		initHooks(); // for the window message handling for imgui
+
+		settings->init();
 
 	}
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {
@@ -31,6 +34,7 @@ extern "C"
 		ImGui::Begin("Practice Mod");
 		
 		UpgradeR->RenderTab();
+		settings->RenderTab();
 
 		// tests
 		ImGui::Text("Holy shit its level id %d", CurrentLevel);

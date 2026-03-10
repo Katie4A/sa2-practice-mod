@@ -1,7 +1,7 @@
 #include "upgraderemover.h"
 
 static bool realTime = 0;
-static bool storyUpgradeLock = 0;
+static bool storyUpgrades = 0;
 
 UpgradeRemover::UpgradeRemover() {
 	// initialize story style table
@@ -81,7 +81,7 @@ void UpgradeRemover::UpdateRealTime(CharObj2Base* player) {
 }
 
 void UpgradeRemover::SetStoryUpgrades(short currentLevel, CharObj2Base* player) {
-	if (storyUpgradeLock) {
+	if (storyUpgrades) {
 		if (this->StoryUpgradesTable.count(currentLevel) > 0) {
 			char charID = player->CharID;
 			std::vector<bool> upgrades;
@@ -165,7 +165,7 @@ void UpgradeRemover::RenderTab() {
 		if (ImGui::BeginTable("", 2)) {
 			ImGui::TableNextColumn(); ImGui::Checkbox("Real-time Updates", &realTime);
 			ImGui::SetItemTooltip("If checked, upgrade changes will immediately be reflected in-game.");
-			ImGui::TableNextColumn(); ImGui::Checkbox("Story Upgrades", &storyUpgradeLock);
+			ImGui::TableNextColumn(); ImGui::Checkbox("Story Upgrades", &storyUpgrades);
 			ImGui::SetItemTooltip("If checked, upon entering a stage or restarting while holding Y, your upgrades will be set to match story conditions.");
 			ImGui::EndTable();
 		}
