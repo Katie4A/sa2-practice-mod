@@ -13,4 +13,5 @@ public:
 	void setESG();
 	void RenderTab();
 	bool ppSkipToggleStatus();
+	void OnFrame();
 };
