@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ConfigSchema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonicretro.org">
+	<Groups>
+		<Group name="GeneralSettings" display="General Settings" alwaysinclude="true">
+			<Property name="multiEnabled" type="bool" defaultvalue="true" display="Use Multiple Viewports">
+				<HelpText>Pops out the OSD if set to true.  Breaks on linux windows managers (X11 mostly, wayland definitely)</HelpText>
+			</Property>
+		</Group>
+	</Groups>
+</ConfigSchema>

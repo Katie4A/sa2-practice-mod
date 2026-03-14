@@ -7,12 +7,15 @@
 #include "upgraderemover.h"
 #include "settings.h"
 #include "FastDeath.h"
+#include "Inifile.hpp"
+#include "hunting.h"
 
 extern "C"
 {
 	static UpgradeRemover* upgradeR = new UpgradeRemover();
 	static Settings* settings = new Settings();
 	static FastDeath* f_death = new FastDeath();
+	static HuntingSettings* huntingSettings = new HuntingSettings();
 	static bool displayMenus = true;
 	static bool prevF1Press = false;
 	//for later
@@ -21,35 +24,53 @@ extern "C"
 
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
 	{
+
+		HelperFunctions HelperFunctionsGlobal = helperFunctions;
+		
+		std::string modpath(path);
+		const IniFile* config = new IniFile(modpath + "\\config.ini");
+		bool useMultiViewports = config->getBool("GeneralSettings", "multiEnabled", false);
+
+
 		// setup imgui - huge thanks to labrys for helping me with this
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
 		ImGuiIO &io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
+		if (useMultiViewports) {
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		}
 
 		ImGui_ImplWin32_Init(MainWindowHandle);
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
 		initHooks(upgradeR, settings);
+
+		huntingSettings->init();
+
 	}
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {
 		if (displayMenus) {
 			ImGui_ImplDX9_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
-			ImGui::ShowDemoWindow();
 			ImGui::Begin("Practice Mod");
+
+			if (ImGui::Button("Get 99 Lives")) {
+				Life_Count[0] = 99;
+			}
 
 			upgradeR->RenderTab();
 			f_death->RenderTab();
 			settings->RenderTab();
+			huntingSettings->RenderTab();
 			
+			ImGui::Text("Press F1 to toggle the windows on or off.\n(Does not work when windows are undocked)");
 
-			// tests
-			ImGui::Text("Holy shit its level id %d", CurrentLevel);
-			ImGui::Text("Press F1 to toggle the windows on or off. (Does not work when windows are undocked)");
+			// tess
+			// ImGui::ShowDemoWindow();
+			//ImGui::Text("Holy shit its level id %d", CurrentLevel);
+			
 			ImGui::End();
 		}
 	}
@@ -58,8 +79,9 @@ extern "C"
 		if (displayMenus) {
 			ImGui::Render();
 			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-			//i don't care atm lol
+			//i don't care about performance per-se atm lol
 			ImGuiIO& io = ImGui::GetIO();
+			// but you gotta do this at the end
 			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 			{
 				ImGui::UpdatePlatformWindows();
