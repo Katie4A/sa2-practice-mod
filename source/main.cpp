@@ -50,16 +50,20 @@ extern "C"
 		ImGui_ImplDX9_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 		ImGui::Begin("Practice Mod");
 		
+		if (ImGui::Button("Get 99 Lives")) {
+			Life_Count[0] = 99;
+		}
+
 		UpgradeR->RenderTab();
 		settings->RenderTab();
 		huntingSettings->RenderTab();
 
-		// tests
-		ImGui::Text("Holy shit its level id %d", CurrentLevel);
+		// tess
+		//ImGui::Text("Holy shit its level id %d", CurrentLevel);
 
 		ImGui::End();
 	}

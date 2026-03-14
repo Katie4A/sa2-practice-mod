@@ -1,5 +1,5 @@
 #include "settings.h"
-
+#include "utils.h"
 static bool ppSkipToggle = 0;
 static bool esgToggle = 0;
 static bool egRestartLockToggle = 0;
@@ -25,9 +25,9 @@ void Settings::RenderTab() {
 	if (ImGui::CollapsingHeader("Settings")) {
 		ImGui::Checkbox("Emblem Skip Glitch", &esgToggle);
 		ImGui::Checkbox("PP Skip Reset", &ppSkipToggle);
-		ImGui::SetItemTooltip("If checked, reset the variable that pushes the kart forward for 120 frames on every load/restart. Only relevant for Route 101/280.");
+		Utils::HelpMarker("If checked, reset the variable that pushes the kart forward for 120 frames on every load/restart. Only relevant for Route 101/280.");
 		ImGui::Checkbox("Lock Egg Golem Death/Restart Counter", &egRestartLockToggle);
-		ImGui::SetItemTooltip(
+		Utils::HelpMarker(
 			"Adjusts the number of times the player has died or restarted.\n"
 			"This is relevant for Egg Golem, where the boss delays itself\n"
 			"depending on how many times you have died/restarted."
