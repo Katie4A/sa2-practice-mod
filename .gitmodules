@@ -1,6 +1,7 @@
 [submodule "imgui"]
 	path = imgui
 	url = https://github.com/ocornut/imgui
+	branch = docking
 [submodule "sa2-mod-loader"]
 	path = sa2-mod-loader
 	url = https://github.com/Katie4A/sa2-mod-loader
