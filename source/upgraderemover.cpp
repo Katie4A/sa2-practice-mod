@@ -90,7 +90,7 @@ void UpgradeRemover::SetStoryUpgrades(short currentLevel, CharObj2Base* player) 
 			else if (charID == Characters_MechEggman) { SetEggmanUpgrades(upgrades); }
 			else if (charID == Characters_Rouge) { SetRougeUpgrades(upgrades); }
 
-			// TODO: update real time somewhere else
+			// ensure upgrades get set on load/restart
 			this->UpdateRealTime(player);
 		}
 	}

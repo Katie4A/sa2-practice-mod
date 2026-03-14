@@ -165,6 +165,7 @@
     <ClInclude Include="..\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\imgui\imstb_textedit.h" />
     <ClInclude Include="..\imgui\imstb_truetype.h" />
+    <ClInclude Include="FastDeath.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hooks.h" />
     <ClInclude Include="pch.h" />
@@ -200,6 +201,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="FastDeath.cpp" />
     <ClCompile Include="hooks.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">

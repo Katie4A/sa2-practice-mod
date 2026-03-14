@@ -6,13 +6,16 @@
 #include "magic.h"
 #include "upgraderemover.h"
 #include "settings.h"
+#include "FastDeath.h"
 
 extern "C"
 {
 	static UpgradeRemover* upgradeR = new UpgradeRemover();
 	static Settings* settings = new Settings();
+	static FastDeath* f_death = new FastDeath();
 	static bool displayMenus = true;
 	static bool prevF1Press = false;
+
 
 	__declspec(dllexport) void __cdecl Init(const char* path, const HelperFunctions& helperFunctions)
 	{
@@ -33,7 +36,9 @@ extern "C"
 			ImGui::Begin("Practice Mod");
 
 			upgradeR->RenderTab();
+			f_death->RenderTab();
 			settings->RenderTab();
+			
 
 			// tests
 			ImGui::Text("Holy shit its level id %d", CurrentLevel);
@@ -72,6 +77,8 @@ extern "C"
 		else if (!F1Press) {
 			prevF1Press = false;
 		}
+
+		f_death->OnInput();
 	}
 
 	__declspec(dllexport) void __cdecl OnControl()

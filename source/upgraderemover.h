@@ -78,7 +78,5 @@ class UpgradeRemover {
 		std::map<int, std::vector<bool>> StoryUpgradesTable;
 		bool storyUpgrades = 0;
 		bool realTime = 0;
-		int prevButtons = 0;
-		int currButtons = 0;
 };
 
