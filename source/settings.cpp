@@ -4,7 +4,12 @@
 static bool ppSkipToggle = 0;
 static bool esgToggle = 0;
 static bool egRestartLockToggle = 0;
+static bool forceCkgWarpToggle = 0;
 static int restartDeathCounter = 0;
+static int ckgSelectedIdx = 0;
+
+
+
 
 bool Settings::ppSkipToggleStatus() {
 	return ppSkipToggle;
@@ -38,6 +43,29 @@ void Settings::RenderTab() {
 		if (!egRestartLockToggle) {
 			ImGui::EndDisabled();
 		}
+		ImGui::Checkbox("Force CKG Warp Destination", &forceCkgWarpToggle);
+		ImGui::SameLine();
+		Utils::HelpMarker(
+			"Forces the next CKG to warp you to the selected stage."
+		);
+		if (!forceCkgWarpToggle) {
+			ImGui::BeginDisabled();
+		}
+		const char* ckgPreviewValue = ckgLevelNameMap[ckgSelectedIdx].second;
+		if (ImGui::BeginCombo("CKG Stage", ckgPreviewValue)) {
+			for (int i = 0; i < ckgLevelNameMap.size(); i++) {
+				const bool isSelected = (ckgSelectedIdx == i);
+				if (ImGui::Selectable(ckgLevelNameMap[i].second, isSelected))
+					ckgSelectedIdx = i;
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		if (!forceCkgWarpToggle) {
+			ImGui::EndDisabled();
+		}
+
 		
 	}
 }
@@ -49,6 +77,9 @@ void Settings::OnFrame() {
 		} if (CurrentLevel == LevelIDs_EggGolemE || CurrentLevel == LevelIDs_EggGolemS) {
 			TimesRestartedOrDied = restartDeathCounter;
 		}
+	}
+	if (forceCkgWarpToggle) {
+		NextLevel = ckgLevelNameMap[ckgSelectedIdx].first;
 	}
 }
 
