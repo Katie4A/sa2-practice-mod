@@ -63,11 +63,11 @@ FastDeath::FastDeath() {
 }
 
 // given level key, set player position to the relevant vector
-void FastDeath::KillPlayerOld(int levelID) {
-	if (this->death_positions.count(levelID) > 0) {
-		MainCharObj1[0]->Position = death_positions[levelID];
-	}
-}
+//void FastDeath::KillPlayerOld(int levelID) {
+//	if (this->death_positions.count(levelID) > 0) {
+//		MainCharObj1[0]->Position = death_positions[levelID];
+//	}
+//}
 
 // gamestate 12 does the instant restart
 // you need to set the Dead bit in the Powerup bitfield
@@ -80,7 +80,6 @@ void FastDeath::KillPlayer() {
 	}
 }
 
-// ask tenzit to see if i can call the function that causes the death fadeout.
 void FastDeath::OnInput() {
 	if (GameState == GameStates_Ingame && fastDeathToggle) {
 		// keep track of previous button presses by negating prevButtons and ANDing that with the current buttons pressed
@@ -98,6 +97,6 @@ void FastDeath::OnInput() {
 void FastDeath::RenderTab() {
 	if (ImGui::CollapsingHeader("Fast Death")) {
 		ImGui::Checkbox("Enable Fast Death", &fastDeathToggle);
-		ImGui::SetItemTooltip("If checked, pressing right on the D-Pad will place you inside a killplane, killing you instantly. Disabled if using savestates.");
+		ImGui::SetItemTooltip("If checked, pressing right on the D-Pad will restart you at your last checkpoint. (Will be) disabled if using savestates.");
 	}
 }

@@ -23,7 +23,7 @@ void Settings::RenderTab() {
 	if (ImGui::CollapsingHeader("Settings")) {
 		ImGui::Checkbox("Emblem Skip Glitch toggle", &esgToggle);
 		ImGui::SameLine();
-		Utils::HelpMarker("If checked, no emblem cutscenes will be played. Note that you need certain emblems to unlock certain modes \n(i.e., to get last story you need both the Hero and Dark credits emblems.)");
+		Utils::HelpMarker("If checked, no emblem cutscenes will be played. Note that you need certain emblems to unlock certain modes \n(i.e., to unlock last story you need both the Hero and Dark credits emblems.)");
 
 		ImGui::Checkbox("PP Skip Reset", &ppSkipToggle);
 		ImGui::SameLine();
