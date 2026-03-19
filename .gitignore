@@ -44,3 +44,5 @@ ipch/
 *.db
 /Debug
 /source/Debug
+/source/Release
+/Release
