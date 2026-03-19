@@ -9,6 +9,7 @@
 #include "FastDeath.h"
 #include "Inifile.hpp"
 #include "hunting.h"
+#include "SaveState.h"
 
 extern "C"
 {
