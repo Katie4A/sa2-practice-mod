@@ -159,99 +159,106 @@ void UpgradeRemover::RenderTab() {
 	if (ImGui::CollapsingHeader("Upgrades")) {
 		if (ImGui::BeginTable("", 2)) {
 			ImGui::TableNextColumn(); ImGui::Checkbox("Real-time Updates", &realTime);
-			ImGui::SetItemTooltip("If checked, upgrade changes will immediately be reflected in-game.");
+			ImGui::SameLine();
+			Utils::HelpMarker("If checked, upgrade changes will immediately be reflected in-game.");
 			ImGui::TableNextColumn(); ImGui::Checkbox("Story Upgrades", &storyUpgrades);
-			ImGui::SetItemTooltip("If checked, upon entering a stage or restarting while holding Y, your upgrades will be set to match story conditions.");
+			ImGui::SameLine();
+			Utils::HelpMarker("If checked, upon entering a stage or restarting while holding Y, your upgrades will be set to match story conditions.");
 			ImGui::EndTable();
 		}
-		SonicTab();
-		TailsTab();
-		KnucklesTab();
-		ShadowTab();
-		EggmanTab();
-		RougeTab();
+		ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+		if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+			if (ImGui::BeginTabItem("Sonic")) {
+				SonicTab();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Tails")) {
+				TailsTab();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Knuckles")) {
+				KnucklesTab();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Shadow")) {
+				ShadowTab();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Eggman")) {
+				EggmanTab();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Rouge")) {
+				RougeTab();
+				ImGui::EndTabItem();
+			}
+			ImGui::EndTabBar();
+		}
 	}
 }
 
 void UpgradeRemover::SonicTab() {
-	if (ImGui::TreeNode("Sonic")) {
-		if (ImGui::BeginTable("Sonic", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Light Shoes", &SonicLightShoesGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &SonicAncientLightGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Magic Gloves", &SonicMagicGlovesGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &SonicFlameRingGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Bounce Bracelet", &SonicBounceBraceletGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &SonicMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+
+	if (ImGui::BeginTable("Sonic", 2)) {
+		ImGui::TableNextColumn(); ImGui::Checkbox("Light Shoes", &SonicLightShoesGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &SonicAncientLightGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Magic Gloves", &SonicMagicGlovesGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &SonicFlameRingGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Bounce Bracelet", &SonicBounceBraceletGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &SonicMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }
 
 void UpgradeRemover::TailsTab() {
-	if (ImGui::TreeNode("Tails")) {
-		if (ImGui::BeginTable("Tails", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Booster", &TailsBoosterGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Bazooka", &TailsBazookaGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &TailsLaserBlasterGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &TailsMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+	if (ImGui::BeginTable("Tails", 2)) {
+		ImGui::TableNextColumn(); ImGui::Checkbox("Booster", &TailsBoosterGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Bazooka", &TailsBazookaGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &TailsLaserBlasterGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &TailsMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }
 
 void UpgradeRemover::KnucklesTab() {
-	if (ImGui::TreeNode("Knuckles")) {
-		if (ImGui::BeginTable("Knuckles", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Shovel Claw", &KnucklesShovelClawGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Sunglasses", &KnucklesSunglassesGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Hammer Gloves", &KnucklesHammerGlovesGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Air Necklace", &KnucklesAirNecklaceGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &KnucklesMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+	if (ImGui::BeginTable("Knuckles", 2)) {
+		ImGui::TableNextColumn(); ImGui::Checkbox("Shovel Claw", &KnucklesShovelClawGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Sunglasses", &KnucklesSunglassesGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Hammer Gloves", &KnucklesHammerGlovesGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Air Necklace", &KnucklesAirNecklaceGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &KnucklesMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }
 
 void UpgradeRemover::ShadowTab() {
-	if (ImGui::TreeNode("Shadow")) {
-		if (ImGui::BeginTable("Shadow", 2)) {
-			// note: shadow skips a byte???
-			ImGui::TableNextColumn(); ImGui::Checkbox("Air Shoes", &ShadowAirShoesGot); 
-			ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &ShadowAncientLightGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &ShadowFlameRingGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &ShadowMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+	if (ImGui::BeginTable("Shadow", 2)) {
+		// note: shadow skips a byte???
+		ImGui::TableNextColumn(); ImGui::Checkbox("Air Shoes", &ShadowAirShoesGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &ShadowAncientLightGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &ShadowFlameRingGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &ShadowMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }
 
 void UpgradeRemover::EggmanTab() {
-	if (ImGui::TreeNode("Eggman")) {
-		if (ImGui::BeginTable("Eggman", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Jet Engine", &EggmanJetEngineGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Large Cannon", &EggmanLargeCannonGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &EggmanLaserBlasterGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Protective Armor", &EggmanProtectiveArmorGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &EggmanMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+	if (ImGui::BeginTable("Eggman", 2)) {
+		ImGui::TableNextColumn(); ImGui::Checkbox("Jet Engine", &EggmanJetEngineGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Large Cannon", &EggmanLargeCannonGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &EggmanLaserBlasterGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Protective Armor", &EggmanProtectiveArmorGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &EggmanMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }
 
 void UpgradeRemover::RougeTab() {
-	if (ImGui::TreeNode("Rouge")) {
-		if (ImGui::BeginTable("Rouge", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Pick Nails", &RougePickNailsGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Treasure Scope", &RougeTreasureScopeGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Iron Boots", &RougeIronBootsGot);
-			ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &RougeMysticMelodyGot);
-			ImGui::EndTable();
-		}
-		ImGui::TreePop();
+	if (ImGui::BeginTable("Rouge", 2)) {
+		ImGui::TableNextColumn(); ImGui::Checkbox("Pick Nails", &RougePickNailsGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Treasure Scope", &RougeTreasureScopeGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Iron Boots", &RougeIronBootsGot);
+		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &RougeMysticMelodyGot);
+		ImGui::EndTable();
 	}
 }

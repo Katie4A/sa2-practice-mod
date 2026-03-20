@@ -27,7 +27,7 @@ void Settings::RenderTab() {
 
 		ImGui::Checkbox("PP Skip Reset", &ppSkipToggle);
 		ImGui::SameLine();
-		Utils::HelpMarker("If checked, reset the variable that pushes the kart forward for 120 frames on every load/restart. Only relevant for Route 101/280.");
+		Utils::HelpMarker("If checked, the variable that pushes the kart forward for 122 on first load will be reset on restart/subsequent load.");
 
 		ImGui::Checkbox("Lock Egg Golem Death/Restart Counter", &egRestartLockToggle);
 		ImGui::SameLine();
