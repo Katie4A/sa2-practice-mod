@@ -1,13 +1,19 @@
 #include "hunting.h"
+#include "hunting_pieces.h"
+#include <imfilebrowser.h>
 #include "utils.h"
 #include <vector>
 #include <random>
+#include <iterator>
+#include <algorithm>
 
 //most code taken from the lab mod's minimum set cover functions
 static bool useSetCoverSets = 0;
 static int lastLevel = -1;
+static int currentSet = -1;
 static std::random_device rd;
 static std::mt19937 gen;
+
 FunctionHook<void, SearchEmeraldsGameManager*> hGenerateSet((intptr_t)0x7380A0);
 
 std::vector<int> setIDs, setIDsCopy;
@@ -24,14 +30,18 @@ std::vector<int> min_sets_ms = { 0,1,2,3,87,739,6,7,14,16,293,29,70,119,122,128,
 
 
 
-void HuntingSettings::init() {
+void HuntingSettings::init(std::string sets_path) {
 	hGenerateSet.Hook(generateSet_impl);
 	//initialize rng
 	gen = std::mt19937(rd());
+	this->setsFilePath = sets_path;
 }
 
+
+
 void HuntingSettings::RenderTab() {
-	if (ImGui::CollapsingHeader("Hunting Settings")) {
+	if (ImGui::CollapsingHeader("Set Generation Settings")) {
+
 		ImGui::Checkbox("Cycle Through All Pieces", &useSetCoverSets);
 		ImGui::SameLine();
 		Utils::HelpMarker("If checked, will cycle randomly through a list of sets that give you every piece possible in a stage.");
@@ -92,10 +102,103 @@ void generateSet_impl(SearchEmeraldsGameManager* emeraldManager) {
 			setIDsCopy = setIDs;
 		}
 		int nextSet = chooseRandomSet();
+		//loop over rng state manually
+		for (int i = 0; i < nextSet; i++) {
+			sa2_rand();
+		}
 		//make FrameCount % 1024 = 0
 		FrameCount = (int)(FrameCount / 1024) * 1024;
-		FrameCount += nextSet;
+		
 		PrintDebug("Next set: %d", nextSet);
 	}
 	hGenerateSet.Original(emeraldManager);
+}
+
+std::vector<std::pair<int, const char*>> getPieceChoices(int level, int pieceIndex) {
+	std::vector<std::pair<int, const char*>> result = {};
+	result.resize(64);
+	if (pieceIndex >= 3) {
+		return result;
+	}
+	//for now
+	if (level != LevelIDs_EggQuarters) {
+		return result;
+	}
+	std::vector<int> majorIds = MAJOR_IDS[pieceIndex];
+
+	std::copy_if(EQ_PIECES.begin(), EQ_PIECES.end(), std::back_inserter(result),
+		[&](std::pair<int, const char*>& current) -> bool {
+			int curr_majorId = current.first >> 8;
+			for (int majorId : majorIds) {
+				if (curr_majorId == majorId) return true;
+			}
+			return false;
+		}
+		);
+
+	return result;
+}
+
+void setPieceByID(int id) {
+	byte major_id = id & 0xFF;
+	Emerald curr_piece;
+	Emerald* slot_arr = (Emerald*)0;
+	int slot_arr_len = 0;
+	switch (major_id) {
+	case 0:
+	case 2:
+	case 5:
+		slot_arr = EmeraldManager->slot_2_emeralds;
+		slot_arr_len = EmeraldManager->slot_2_array_len;
+		break;
+	case 1:
+	case 3:
+		slot_arr = EmeraldManager->slot_1_emeralds;
+		slot_arr_len = EmeraldManager->slot_1_array_len;
+		break;
+	case 4:
+	case 7:
+	case 8:
+		slot_arr = EmeraldManager->slot_3_emeralds;
+		slot_arr_len = EmeraldManager->slot_3_array_len;
+		break;
+	case 0xA:
+		slot_arr = EmeraldManager->slot_enemy_emeralds;
+		slot_arr_len = EmeraldManager->slot_enemy_array_len;
+		break;
+	}
+	if (slot_arr_len == 0) {
+		PrintDebug("PIECE %X HAS INVALID ID", id);
+		return;
+	}
+	for (int i = 0; i < slot_arr_len; i++) {
+		curr_piece = slot_arr[i];
+		if (curr_piece.id == id) {
+			if (slot_arr == EmeraldManager->slot_2_emeralds) {
+				EmeraldManager->piece_2.id = curr_piece.id;
+				EmeraldManager->piece_2.position.x = curr_piece.position.x;
+				EmeraldManager->piece_2.position.y = curr_piece.position.y;
+				EmeraldManager->piece_2.position.z = curr_piece.position.z;
+				//PrintDebug("P2 STORED ID: %X",EmeraldManager->piece_2.id);
+				return;
+			}
+			else if (slot_arr == EmeraldManager->slot_3_emeralds) {
+				EmeraldManager->piece_3.id = curr_piece.id;
+				EmeraldManager->piece_3.position.x = curr_piece.position.x;
+				EmeraldManager->piece_3.position.y = curr_piece.position.y;
+				EmeraldManager->piece_3.position.z = curr_piece.position.z;
+			}
+			else if (slot_arr == EmeraldManager->slot_1_emeralds || slot_arr == EmeraldManager->slot_enemy_emeralds) {
+				EmeraldManager->piece_1.id = curr_piece.id;
+				EmeraldManager->piece_1.position.x = curr_piece.position.x;
+				EmeraldManager->piece_1.position.y = curr_piece.position.y;
+				EmeraldManager->piece_1.position.z = curr_piece.position.z;
+			}
+		}
+	}
+	if (slot_arr_len > 0) {
+		PrintDebug("PIECE %X NOT FOUND", id);
+	}
+
+
 }

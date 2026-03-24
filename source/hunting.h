@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include <string>
 
 
 
@@ -42,14 +43,20 @@ struct SearchEmeraldsGameManager {
     unsigned char field24_0x72;
     unsigned char field25_0x73;
 };
-
+DataPointer(SearchEmeraldsGameManager*, EmeraldManager, 0x1AF014C);
 
 
 class HuntingSettings {
 public:
     HuntingSettings() {}
-    void init();
+    void init(std::string sets_path);
     void RenderTab();
+    std::string setsFilePath;
+private:
+    std::vector<int> setIDs;
+    std::vector<int> setIDsCopy;
 };
 
 void generateSet_impl(SearchEmeraldsGameManager* emeraldManager);
+
+std::vector<std::pair<int, const char*>> getPieceChoices(int level, int pieceNum);

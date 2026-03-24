@@ -46,7 +46,7 @@ extern "C"
 		ImGui::StyleColorsDark();
 		initHooks(upgradeR, settings);
 
-		huntingSettings->init();
+		huntingSettings->init(modpath + "\\sets.txt");
 
 	}
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {
@@ -55,21 +55,31 @@ extern "C"
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			ImGui::Begin("Practice Mod");
+			if (ImGui::BeginTabBar("SettingsTabBar")) {
+				if (ImGui::BeginTabItem("General Settings")) {
 
-			if (ImGui::Button("Get 99 Lives")) {
-				Life_Count[0] = 99;
+					if (ImGui::Button("Get 99 Lives")) {
+						Life_Count[0] = 99;
+					}
+
+					upgradeR->RenderTab();
+					f_death->RenderTab();
+					settings->RenderTab();
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Hunting")) {
+					huntingSettings->RenderTab();
+					ImGui::EndTabItem();
+				}
 			}
-
-			upgradeR->RenderTab();
-			f_death->RenderTab();
-			settings->RenderTab();
-			huntingSettings->RenderTab();
-			
 			ImGui::Text("Press F1 to toggle the windows on or off.\n(Does not work when windows are undocked)");
 
 			// tess
 			// ImGui::ShowDemoWindow();
 			//ImGui::Text("Holy shit its level id %d", CurrentLevel);
+			
+			
+			
 			
 			ImGui::End();
 		}

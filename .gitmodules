@@ -5,3 +5,6 @@
 [submodule "sa2-mod-loader"]
 	path = sa2-mod-loader
 	url = https://github.com/Katie4A/sa2-mod-loader
+[submodule "imgui-filebrowser"]
+	path = imgui-filebrowser
+	url = https://github.com/AirGuanZ/imgui-filebrowser.git
