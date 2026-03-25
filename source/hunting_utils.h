@@ -1,8 +1,6 @@
 #pragma once
 #include "pch.h"
-#include <imfilebrowser.h>
-#include <string>
-#include <filesystem>
+
 
 
 struct Fvec3 {
@@ -12,8 +10,7 @@ struct Fvec3 {
 };
 
 struct Emerald {
-    short id;
-    unsigned short gap;
+    int id;
     struct Fvec3 position;
 };
 
@@ -45,31 +42,6 @@ struct SearchEmeraldsGameManager {
     unsigned char field24_0x72;
     unsigned char field25_0x73;
 };
+
 DataPointer(SearchEmeraldsGameManager*, EmeraldManager, 0x1AF014C);
-
-static std::vector<std::pair<int, const char*>> huntingLevelMap =  {
-    {0, "None"},
-    {LevelIDs_AquaticMine, "Aquatic Mine"},
-    {LevelIDs_DeathChamber, "Death Chamber"},
-    {LevelIDs_EggQuarters, "Egg Quarters"}
-};
-
-class HuntingSettings {
-public:
-    HuntingSettings() {}
-    void init();
-    void onFrame();
-    void RenderTab();
-    void LoadSetsFromFile(std::string fpath);
-    bool isSetFileModified();
-    std::string setsFilePath;
-private:
-    std::vector<int> setIDs;
-    std::vector<int> setIDsCopy;
-    std::filesystem::file_time_type last_setf_write;
-};
-
-void generateSet_impl(SearchEmeraldsGameManager* emeraldManager);
-
-
-std::vector<std::pair<int, const char*>> getPieceChoices(int level, int pieceNum);
+void setPieceByID(int id);

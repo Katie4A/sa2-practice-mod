@@ -18,6 +18,8 @@ extern "C"
 	static HuntingSettings* huntingSettings = new HuntingSettings();
 	static bool displayMenus = true;
 	static bool prevF1Press = false;
+	static ImGui::FileBrowser setFileDialog;
+	static bool fileDialogOpen = false;
 	//for later
 	static ImGuiWindowFlags osd_windowflags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
 
@@ -45,8 +47,9 @@ extern "C"
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
 		initHooks(upgradeR, settings);
-
-		huntingSettings->init(modpath + "\\sets.txt");
+		setFileDialog.SetTitle("Sets File");
+		setFileDialog.SetTypeFilters({ ".txt" });
+		setFileDialog.SetDirectory(modpath);
 
 	}
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {
@@ -68,6 +71,9 @@ extern "C"
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("Hunting")) {
+					if (ImGui::Button("Load sets.txt")) {
+						setFileDialog.Open();
+					}
 					huntingSettings->RenderTab();
 					ImGui::EndTabItem();
 				}
@@ -82,7 +88,13 @@ extern "C"
 			
 			
 			ImGui::End();
+			setFileDialog.Display();
+			if (setFileDialog.HasSelected()) {
+				huntingSettings->setsFilePath = setFileDialog.GetSelected().string();
+				setFileDialog.ClearSelected();
+			}
 		}
+		
 	}
 
 	__declspec(dllexport) void __cdecl OnRenderSceneEnd() {
