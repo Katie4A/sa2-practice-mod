@@ -3,4 +3,5 @@
 
 namespace Utils {
 	void HelpMarker(const char* desc);
+	double getIGT();
 }

@@ -12,4 +12,10 @@ namespace Utils {
             ImGui::EndTooltip();
         }
     }
+    double getIGT() {
+        double igt = TimerMinutes * 60.0 + TimerSeconds;
+        double centis = ceil(TimerFrames / 60.0 * 100);
+        igt += centis / 100.0;
+        return igt;
+    }
 }

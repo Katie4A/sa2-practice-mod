@@ -1,18 +1,28 @@
 #include "hunting.h"
 #include "hunting_pieces.h"
-#include <imfilebrowser.h>
+
 #include "utils.h"
 #include <vector>
-#include <random>
+#include <random> 
 #include <iterator>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+
 
 //most code taken from the lab mod's minimum set cover functions
 static bool useSetCoverSets = 0;
+static bool precollectP1, precollectP2, precollectP3 = 0;
 static int lastLevel = -1;
 static int currentSet = -1;
+static int p1SelectedIdx, p2SelectedIdx, p3SelectedIdx = 0;
+static int partialSetLevelIdx = 0;
 static std::random_device rd;
 static std::mt19937 gen;
+static std::vector<std::pair<int, const char*>> p2Choices;
+static std::vector<std::pair<int, const char*>> p3Choices;
+
+
 
 FunctionHook<void, SearchEmeraldsGameManager*> hGenerateSet((intptr_t)0x7380A0);
 
@@ -30,22 +40,117 @@ std::vector<int> min_sets_ms = { 0,1,2,3,87,739,6,7,14,16,293,29,70,119,122,128,
 
 
 
-void HuntingSettings::init(std::string sets_path) {
+void HuntingSettings::init() {
 	hGenerateSet.Hook(generateSet_impl);
 	//initialize rng
 	gen = std::mt19937(rd());
-	this->setsFilePath = sets_path;
+	this->setIDs = {};
+	this->setsFilePath = "";
+	
+}
+
+bool HuntingSettings::isSetFileModified() {
+	
+	std::filesystem::file_time_type curr_modified_time = std::filesystem::last_write_time(this->setsFilePath);
+	if (this->last_setf_write != curr_modified_time) {
+		this->last_setf_write = curr_modified_time;
+		return true;
+	}
+	return false;
+}
+
+void HuntingSettings::onFrame()
+{
 }
 
 
 
 void HuntingSettings::RenderTab() {
-	if (ImGui::CollapsingHeader("Set Generation Settings")) {
-
+	if (ImGui::CollapsingHeader("Generation Settings")) {
 		ImGui::Checkbox("Cycle Through All Pieces", &useSetCoverSets);
 		ImGui::SameLine();
 		Utils::HelpMarker("If checked, will cycle randomly through a list of sets that give you every piece possible in a stage.");
 	}
+	if (ImGui::CollapsingHeader("Partial Set Settings")) {
+		ImGui::Checkbox("Precollect P1", &precollectP1);
+		ImGui::SameLine();
+		if (precollectP1) {
+			ImGui::BeginDisabled();
+		}
+		ImGui::Checkbox("Precollect P2", &precollectP2);
+		if (precollectP1) {
+			ImGui::EndDisabled();
+		}
+		const char* levelPreviewValue = huntingLevelMap[partialSetLevelIdx].second;
+		if (ImGui::BeginCombo("Target Stage", levelPreviewValue)) {
+			for (int i = 0; i < huntingLevelMap.size(); i++) {
+				const bool isSelected = (partialSetLevelIdx == i);
+				if (ImGui::Selectable(huntingLevelMap[i].second, isSelected))
+					partialSetLevelIdx = i;
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+			}
+		}
+	switch (huntingLevelMap[partialSetLevelIdx].first) {
+	case LevelIDs_EggQuarters:
+		p2Choices = getPieceChoices(LevelIDs_EggQuarters, 1);
+		p3Choices = getPieceChoices(LevelIDs_EggQuarters, 2);
+		break;
+	default:
+		p2Choices = {};
+		p3Choices = {};
+		break;
+	}
+	const char* p2PreviewValue = "";
+	const char* p3PreviewValue = "";
+	if (p2Choices.size() > 0) {
+		 p2PreviewValue = p2Choices[p2SelectedIdx].second;
+	}
+	if (ImGui::BeginCombo("Piece 2", p2PreviewValue)) {
+		for (int i = 0; i < p2Choices.size(); i++) {
+			const bool isP2Selected = (p2SelectedIdx == i);
+			if (ImGui::Selectable(p2Choices[i].second, isP2Selected))
+				p2SelectedIdx = i;
+			if (isP2Selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	if (p3Choices.size() > 0) {
+		p3PreviewValue = p3Choices[p3SelectedIdx].second;
+	}
+	if (ImGui::BeginCombo("Piece 3", p3PreviewValue)) {
+		for (int i = 0; i < p3Choices.size(); i++) {
+			const bool isP2Selected = (p3SelectedIdx == i);
+			if (ImGui::Selectable(p3Choices[i].second, isP2Selected))
+				p3SelectedIdx = i;
+			if (isP2Selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+				
+}
+
+
+void HuntingSettings::LoadSetsFromFile(std::string fpath) {
+
+	std::ifstream infile(fpath);
+	int id;
+	setIDs.clear();
+	setIDsCopy.clear();
+	PrintDebug("Sets Loaded:");
+	while (infile >> id) {
+		setIDs.push_back(id);
+		setIDsCopy.push_back(id);
+		PrintDebug("%d", id);
+	}
+
+	infile.close();
+	last_setf_write = std::filesystem::last_write_time(fpath);
 }
 
 int chooseRandomSet() {
@@ -63,56 +168,83 @@ int chooseRandomSet() {
 }
 
 void generateSet_impl(SearchEmeraldsGameManager* emeraldManager) {
-	//M1 Only
-	if (useSetCoverSets && MissionNum == 0) {
-		if (lastLevel != CurrentLevel) {
-			switch (CurrentLevel) {
-			case LevelIDs_WildCanyon:
-				setIDs = min_sets_wc;
-				break;
-			case LevelIDs_PumpkinHill:
-				setIDs = min_sets_ph;
-				break;
-			case LevelIDs_AquaticMine:
-				setIDs = min_sets_am;
-				break;
-			case LevelIDs_DeathChamber:
-				setIDs = min_sets_dc;
-				break;
-			case LevelIDs_MeteorHerd:
-				setIDs = min_sets_mh;
-				break;
-			case LevelIDs_DryLagoon:
-				setIDs = min_sets_dl;
-				break;
-			case LevelIDs_EggQuarters:
-				setIDs = min_sets_eq;
-				break;
-			case LevelIDs_SecurityHall:
-				setIDs = min_sets_sh;
-				break;
-			case LevelIDs_MadSpace:
-				setIDs = min_sets_ms;
-				break;
-			default:
-				PrintDebug("NOT A HUNTING STAGE");
-				break;
+	if (!precollectP1 && !precollectP2 && !precollectP3) {
+		if (useSetCoverSets && MissionNum == 0) {
+			if (lastLevel != CurrentLevel) {
+				switch (CurrentLevel) {
+				case LevelIDs_WildCanyon:
+					setIDs = min_sets_wc;
+					break;
+				case LevelIDs_PumpkinHill:
+					setIDs = min_sets_ph;
+					break;
+				case LevelIDs_AquaticMine:
+					setIDs = min_sets_am;
+					break;
+				case LevelIDs_DeathChamber:
+					setIDs = min_sets_dc;
+					break;
+				case LevelIDs_MeteorHerd:
+					setIDs = min_sets_mh;
+					break;
+				case LevelIDs_DryLagoon:
+					setIDs = min_sets_dl;
+					break;
+				case LevelIDs_EggQuarters:
+					setIDs = min_sets_eq;
+					break;
+				case LevelIDs_SecurityHall:
+					setIDs = min_sets_sh;
+					break;
+				case LevelIDs_MadSpace:
+					setIDs = min_sets_ms;
+					break;
+				default:
+					PrintDebug("NOT A HUNTING STAGE");
+					break;
+				}
+				lastLevel = CurrentLevel;
+				setIDsCopy = setIDs;
 			}
-			lastLevel = CurrentLevel;
-			setIDsCopy = setIDs;
+			int nextSet = chooseRandomSet();
+			//loop over rng state manually
+			for (int i = 0; i < nextSet; i++) {
+				sa2_rand();
+			}
+			//make FrameCount % 1024 = 0
+			FrameCount = (int)(FrameCount / 1024) * 1024;
+
+			PrintDebug("Next set: %d", nextSet);
 		}
-		int nextSet = chooseRandomSet();
-		//loop over rng state manually
-		for (int i = 0; i < nextSet; i++) {
-			sa2_rand();
-		}
-		//make FrameCount % 1024 = 0
-		FrameCount = (int)(FrameCount / 1024) * 1024;
-		
-		PrintDebug("Next set: %d", nextSet);
 	}
 	hGenerateSet.Original(emeraldManager);
+	if (huntingLevelMap[partialSetLevelIdx].first == LevelIDs_EggQuarters && CurrentLevel == LevelIDs_EggQuarters && TimesRestartedOrDied == 0) {
+		//do all the logic for piece locking just after full generation
+		if (precollectP1) {
+			if (emeraldManager->piece_1.id != -2) {
+				emeraldManager->piece_1.id = -2;
+				emeraldManager->emeralds_spawned -= 1;
+			}
+		}
+		if (precollectP2) {
+			if (emeraldManager->piece_2.id != -2) {
+				emeraldManager->piece_2.id = -2;
+				emeraldManager->emeralds_spawned -= 1;
+			}
+		}
+
+		if (!precollectP2 && p2Choices.size() > 0) {
+			int piece_id = p2Choices[p2SelectedIdx].first;
+			setPieceByID(piece_id);
+		}
+		if (p3Choices.size() > 0) {
+			int piece_id = p3Choices[p3SelectedIdx].first;
+			setPieceByID(piece_id);
+		}
+	}
 }
+
+
 
 std::vector<std::pair<int, const char*>> getPieceChoices(int level, int pieceIndex) {
 	std::vector<std::pair<int, const char*>> result = {};
@@ -120,12 +252,13 @@ std::vector<std::pair<int, const char*>> getPieceChoices(int level, int pieceInd
 	if (pieceIndex >= 3) {
 		return result;
 	}
-	//for now
+	//for now, only supports egg quarters
 	if (level != LevelIDs_EggQuarters) {
 		return result;
 	}
+		
 	std::vector<int> majorIds = MAJOR_IDS[pieceIndex];
-
+	//TODO: Replace for other levels somehow
 	std::copy_if(EQ_PIECES.begin(), EQ_PIECES.end(), std::back_inserter(result),
 		[&](std::pair<int, const char*>& current) -> bool {
 			int curr_majorId = current.first >> 8;
