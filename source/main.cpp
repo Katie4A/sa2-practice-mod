@@ -108,10 +108,13 @@ extern "C"
 		bool F1Press = GetKeyState(VK_F1) & 0x8000;
 		if (F1Press && !prevF1Press) {
 			displayMenus = !displayMenus;
+			// update imgui flags to disable input
+			osd_windowflags |= ImGuiWindowFlags_NoInputs;
 			prevF1Press = true;
 		}
 		else if (!F1Press) {
 			prevF1Press = false;
+			osd_windowflags &= !ImGuiWindowFlags_NoInputs;
 		}
 
 		f_death->OnInput();
@@ -119,14 +122,7 @@ extern "C"
 
 	__declspec(dllexport) void __cdecl OnControl()
 	{
-		// unfortunately, no inputs are registered on restart until the fade-out is complete. 
-		// lets assume that if the player presses y at any point during gamestate 13, they wanted
-		// to reset upgrades back to story style.
-		if (GameState == GameStates_NormalRestart) {
-			if ((ControllerPointers[0]->on & Buttons_Y) && upgradeR->storyUpgradesToggleStatus()) {
-				upgradeR->SetStoryUpgrades(CurrentLevel, MainCharObj2[0]);
-			}
-		}
+		upgradeR->OnControl();
 	}
 	
 	__declspec(dllexport) ModInfo SA2ModInfo = { ModLoaderVer }; // This is needed for the Mod Loader to recognize the DLL.

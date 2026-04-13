@@ -49,6 +49,17 @@ UpgradeRemover::UpgradeRemover() {
 	};
 }
 
+void UpgradeRemover::OnControl() {
+	// unfortunately, no inputs are registered on restart until the fade-out is complete. 
+		// lets assume that if the player presses y at any point during gamestate 13, they wanted
+		// to reset upgrades back to story style.
+	if (GameState == GameStates_NormalRestart) {
+		if ((ControllerPointers[0]->on & Buttons_Y) && this->storyUpgradesToggleStatus()) {
+			this->SetStoryUpgrades(CurrentLevel, MainCharObj2[0]);
+		}
+	}
+}
+
 // in sa2, characters can share the same upgrade.
 // if an upgrade is enabled for both characters, the upgrade will remain until both are turned off,
 // regardless of whether or not your character has that upgrade.

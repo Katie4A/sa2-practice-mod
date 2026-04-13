@@ -58,6 +58,7 @@ DataArray(bool, UpgradesOnFile, 0x1DEB300, 29);
 class UpgradeRemover {
 	public:
 		UpgradeRemover();
+		void OnControl();
 		void UpdateRealTime(CharObj2Base* player);
 		void SetStoryUpgrades(short currentLevel, CharObj2Base* player);
 		void SetSonicUpgrades(std::vector<bool> upgrades);
