@@ -222,13 +222,12 @@ void UpgradeRemover::InitUpgradeObjectHooks() {
 	upgradeObjectHooksInitialized = true;
 }
 
-bool UpgradeRemover::QueueStoryRestartReset() {
+void UpgradeRemover::QueueStoryRestartReset() {
 	if (!storyUpgrades) {
-		return false;
+		return;
 	}
 
 	storyRestartResetQueued = true;
-	return true;
 }
 
 void UpgradeRemover::OnControl() {

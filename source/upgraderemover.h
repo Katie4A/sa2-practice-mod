@@ -26,7 +26,7 @@ class UpgradeRemover {
 		bool storyUpgradesToggleStatus() { return storyUpgrades; };
 		bool realtimeUpgradesToggleStatus() { return realTime; };
 	private:
-		bool QueueStoryRestartReset();
+		void QueueStoryRestartReset();
 		bool storyUpgrades = 0;
 		bool realTime = 0;
 		bool storyRestartResetQueued = false;
