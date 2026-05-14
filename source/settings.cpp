@@ -5,14 +5,15 @@ static bool ppSkipToggle = 0;
 static bool esgToggle = 0;
 static bool egRestartLockToggle = 0;
 static bool forceCkgWarpToggle = 0;
-static int restartDeathCounter = 0;
-static int ckgSelectedIdx = 0;
-
-
-
+static short restartDeathCounter = 0;
+static const CkgLevelEntry* selectedCkgLevel = &ckgLevelNameMap[0];
 
 bool Settings::ppSkipToggleStatus() {
 	return ppSkipToggle;
+}
+
+bool Settings::NeedsFrameTick() const {
+	return egRestartLockToggle || forceCkgWarpToggle;
 }
 
 void Settings::setESG() {
@@ -39,10 +40,19 @@ void Settings::RenderTab() {
 			ImGui::BeginDisabled();
 		}
 		//variable's a short so this is type-safe
-		ImGui::InputScalar("Deaths/Restarts", ImGuiDataType_S16, &restartDeathCounter,NULL, NULL, "%d");
+		if (ImGui::InputScalar("Deaths/Restarts", ImGuiDataType_S16, &restartDeathCounter, NULL, NULL, "%d")) {
+			if (restartDeathCounter < 0) {
+				restartDeathCounter = 0;
+			}
+			else if (restartDeathCounter > 99) {
+				restartDeathCounter = 99;
+			}
+		}
+
 		if (!egRestartLockToggle) {
 			ImGui::EndDisabled();
 		}
+
 		ImGui::Checkbox("Force CKG Warp Destination", &forceCkgWarpToggle);
 		ImGui::SameLine();
 		Utils::HelpMarker(
@@ -51,12 +61,12 @@ void Settings::RenderTab() {
 		if (!forceCkgWarpToggle) {
 			ImGui::BeginDisabled();
 		}
-		const char* ckgPreviewValue = ckgLevelNameMap[ckgSelectedIdx].second;
-		if (ImGui::BeginCombo("CKG Stage", ckgPreviewValue)) {
-			for (int i = 0; i < ckgLevelNameMap.size(); i++) {
-				const bool isSelected = (ckgSelectedIdx == i);
-				if (ImGui::Selectable(ckgLevelNameMap[i].second, isSelected))
-					ckgSelectedIdx = i;
+
+		if (ImGui::BeginCombo("CKG Stage", selectedCkgLevel->name)) {
+			for (const CkgLevelEntry& entry : ckgLevelNameMap) {
+				const bool isSelected = (selectedCkgLevel == &entry);
+				if (ImGui::Selectable(entry.name, isSelected))
+					selectedCkgLevel = &entry;
 				if (isSelected)
 					ImGui::SetItemDefaultFocus();
 			}
@@ -65,21 +75,17 @@ void Settings::RenderTab() {
 		if (!forceCkgWarpToggle) {
 			ImGui::EndDisabled();
 		}
-
-		
 	}
 }
 
 void Settings::OnFrame() {
 	if (egRestartLockToggle) {
-		if (restartDeathCounter > 99) {
-			restartDeathCounter = 99;
-		} if (CurrentLevel == LevelIDs_EggGolemE || CurrentLevel == LevelIDs_EggGolemS) {
+		if ((CurrentLevel == LevelIDs_EggGolemE || CurrentLevel == LevelIDs_EggGolemS) && TimesRestartedOrDied != restartDeathCounter) {
 			TimesRestartedOrDied = restartDeathCounter;
 		}
 	}
+
 	if (forceCkgWarpToggle) {
-		NextLevel = ckgLevelNameMap[ckgSelectedIdx].first;
+		NextLevel = static_cast<short>(selectedCkgLevel->level);
 	}
 }
-

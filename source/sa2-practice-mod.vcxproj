@@ -195,10 +195,6 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalIncludeDirectories>
     </ClCompile>
-    <ClCompile Include="..\imgui\imgui_demo.cpp">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalIncludeDirectories>
-    </ClCompile>
     <ClCompile Include="..\imgui\imgui_draw.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalIncludeDirectories>

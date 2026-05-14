@@ -1,275 +1,331 @@
 #include "upgraderemover.h"
 
-UpgradeRemover::UpgradeRemover() {
-	// initialize story style table
-	// TODO: make these not magic numbers?
-	this->StoryUpgradesTable = {
-		{LevelIDs_CityEscape, {0, 0, 0, 0, 0, 0}}, // check header for what each bool corresponds to
-		{LevelIDs_MetalHarbor, {0, 0, 0, 0, 0, 0}},
-		{LevelIDs_GreenForest, {1, 0, 0, 0, 0, 0}},
-		{LevelIDs_PyramidCave, {1, 0, 0, 0, 0, 0}},
-		{LevelIDs_CrazyGadget, {1, 0, 0, 0, 1, 0}},
-		{LevelIDs_FinalRush, {1, 0, 0, 0, 1, 0}}, // most runners skip the flame ring via a crazy gadget skip of some kind
-		{LevelIDs_CannonsCoreS, {1, 0, 0, 0, 1, 0}},
-		// think about adding boss stages later if you care
-
-		{LevelIDs_PrisonLane, {0, 0, 0, 0}},
-		{LevelIDs_MissionStreet, {0, 0, 0, 0}},
-		{LevelIDs_HiddenBase, {1, 0, 0, 0}},
-		{LevelIDs_EternalEngine, {1, 0, 0, 0}},
-		{LevelIDs_CannonsCoreT, {1, 0, 0, 0}},
-		
-		{LevelIDs_WildCanyon, {0, 0, 0, 0, 0}},
-		{LevelIDs_PumpkinHill, {0, 0, 0, 0, 0}},
-		{LevelIDs_AquaticMine, {1, 0, 0, 0, 0}},
-		{LevelIDs_DeathChamber, {1, 0, 0, 0, 0}},
-		{LevelIDs_MeteorHerd, {1, 0, 1, 0, 0}},
-		{LevelIDs_CannonsCoreK, {1, 0, 1, 0, 0}},
-		
-		// shadow (does not collect upgrades in a story run)
-		{LevelIDs_RadicalHighway, {0, 0, 0, 0}},
-		{LevelIDs_WhiteJungle, {0, 0, 0, 0}},
-		{LevelIDs_SkyRail, {0, 0, 0, 0}},
-		{LevelIDs_FinalChase, {0, 0, 0, 0}},
-
-		// eggman
-		{LevelIDs_IronGate, {0, 0, 0, 0, 0}},
-		{LevelIDs_SandOcean, {0, 0, 0, 0, 0}},
-		{LevelIDs_LostColony, {0, 0, 0, 0, 1}},
-		{LevelIDs_WeaponsBed, {1, 0, 0, 0, 1}}, // mystic melody gets obtained if you do sandwalking.
-		{LevelIDs_CosmicWall, {1, 0, 0, 0, 1}},
-		{LevelIDs_CannonsCoreE, {1, 0, 0, 0, 1}},
-
-		// rouge
-		{LevelIDs_DryLagoon, {0, 0, 0, 0}},
-		{LevelIDs_EggQuarters, {0, 0, 0, 0}},
-		{LevelIDs_SecurityHall, {1, 0, 0, 0}},
-		{LevelIDs_MadSpace, {1, 0, 0, 0}},
-		{LevelIDs_CannonsCoreR, {1, 0, 1, 0}}, // its common for players to skip the iron boots in mad space, but let's assume they grab them anyway.
+namespace {
+	struct UpgradeBitRange {
+		int start;
+		int end;
 	};
+
+	struct StoryUpgradeEntry {
+		short level;
+		int mask;
+	};
+
+	constexpr StoryUpgradeEntry StoryUpgradeMasks[] = {
+		{ LevelIDs_CityEscape, 0 },
+		{ LevelIDs_MetalHarbor, 0 },
+		{ LevelIDs_GreenForest, Upgrades_SonicLightShoes },
+		{ LevelIDs_PyramidCave, Upgrades_SonicLightShoes },
+		{ LevelIDs_CrazyGadget, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
+		{ LevelIDs_FinalRush, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
+		{ LevelIDs_CannonsCoreS, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
+
+		{ LevelIDs_PrisonLane, 0 },
+		{ LevelIDs_MissionStreet, 0 },
+		{ LevelIDs_HiddenBase, Upgrades_TailsBooster },
+		{ LevelIDs_EternalEngine, Upgrades_TailsBooster },
+		{ LevelIDs_CannonsCoreT, Upgrades_TailsBooster },
+
+		{ LevelIDs_WildCanyon, 0 },
+		{ LevelIDs_PumpkinHill, 0 },
+		{ LevelIDs_AquaticMine, Upgrades_KnucklesShovelClaw },
+		{ LevelIDs_DeathChamber, Upgrades_KnucklesShovelClaw },
+		{ LevelIDs_MeteorHerd, Upgrades_KnucklesShovelClaw | Upgrades_KnucklesHammerGloves },
+		{ LevelIDs_CannonsCoreK, Upgrades_KnucklesShovelClaw | Upgrades_KnucklesHammerGloves },
+
+		{ LevelIDs_RadicalHighway, 0 },
+		{ LevelIDs_WhiteJungle, 0 },
+		{ LevelIDs_SkyRail, 0 },
+		{ LevelIDs_FinalChase, 0 },
+
+		{ LevelIDs_IronGate, 0 },
+		{ LevelIDs_SandOcean, 0 },
+		{ LevelIDs_LostColony, Upgrades_EggmanMysticMelody },
+		{ LevelIDs_WeaponsBed, Upgrades_EggmanJetEngine | Upgrades_EggmanMysticMelody },
+		{ LevelIDs_CosmicWall, Upgrades_EggmanJetEngine | Upgrades_EggmanMysticMelody },
+		{ LevelIDs_CannonsCoreE, Upgrades_EggmanJetEngine | Upgrades_EggmanMysticMelody },
+
+		{ LevelIDs_DryLagoon, 0 },
+		{ LevelIDs_EggQuarters, 0 },
+		{ LevelIDs_SecurityHall, Upgrades_RougePickNails },
+		{ LevelIDs_MadSpace, Upgrades_RougePickNails },
+		{ LevelIDs_CannonsCoreR, Upgrades_RougePickNails | Upgrades_RougeIronBoots },
+	};
+
+	bool TryGetUpgradeBitRange(const char charID, UpgradeBitRange& range) {
+		switch (charID) {
+			case Characters_Sonic:
+				range = { UpgradeBits_SonicLightShoes, UpgradeBits_SonicMysticMelody + 1 };
+				return true;
+			case Characters_MechTails:
+				range = { UpgradeBits_TailsBooster, UpgradeBits_TailsMysticMelody + 1 };
+				return true;
+			case Characters_Knuckles:
+				range = { UpgradeBits_KnucklesShovelClaw, UpgradeBits_KnucklesMysticMelody + 1 };
+				return true;
+			case Characters_Shadow:
+				range = { UpgradeBits_ShadowAirShoes, UpgradeBits_ShadowMysticMelody + 1 };
+				return true;
+			case Characters_MechEggman:
+				range = { UpgradeBits_EggmanJetEngine, UpgradeBits_EggmanMysticMelody + 1 };
+				return true;
+			case Characters_Rouge:
+				range = { UpgradeBits_RougePickNails, UpgradeBits_RougeMysticMelody + 1 };
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	int BuildCurrentUpgradeMask(const char charID) {
+		UpgradeBitRange range = {};
+		if (!TryGetUpgradeBitRange(charID, range)) {
+			return 0;
+		}
+
+		int mask = 0;
+		for (int i = range.start; i < range.end; ++i) {
+			if (UpgradesOnFile[i]) {
+				mask |= 1 << i;
+			}
+		}
+
+		return mask;
+	}
+
+	void WriteUpgradeFileFlagsForMask(const char charID, const int mask) {
+		UpgradeBitRange range = {};
+		if (!TryGetUpgradeBitRange(charID, range)) {
+			return;
+		}
+
+		for (int i = range.start; i < range.end; ++i) {
+			UpgradesOnFile[i] = (mask & (1 << i)) != 0;
+		}
+	}
+
+	bool TryGetStoryMask(const short level, int& mask) {
+		for (const StoryUpgradeEntry& entry : StoryUpgradeMasks) {
+			if (entry.level == level) {
+				mask = entry.mask;
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
+bool UpgradeRemover::QueueStoryRestartReset() {
+	if (!storyUpgrades) {
+		return false;
+	}
+
+	storyRestartResetQueued = true;
+	return true;
 }
 
 void UpgradeRemover::OnControl() {
-	// unfortunately, no inputs are registered on restart until the fade-out is complete. 
-		// lets assume that if the player presses y at any point during gamestate 13, they wanted
-		// to reset upgrades back to story style.
-	if (GameState == GameStates_NormalRestart) {
-		if ((ControllerPointers[0]->on & Buttons_Y) && this->storyUpgradesToggleStatus()) {
-			this->SetStoryUpgrades(CurrentLevel, MainCharObj2[0]);
-		}
+	if (GameState == GameStates_NormalRestart && ControllerPointers[0] != nullptr && (ControllerPointers[0]->on & Buttons_Y)) {
+		QueueStoryRestartReset();
 	}
 }
 
-// in sa2, characters can share the same upgrade.
-// if an upgrade is enabled for both characters, the upgrade will remain until both are turned off,
-// regardless of whether or not your character has that upgrade.
-// the game only sets the bitfields for the character you're currently playing, so just set those instead.
-void UpgradeRemover::UpdateRealTime(CharObj2Base* player) {
-	int characterBitStart = 0;
-	int characterBitEnd = 0;
-	// grab character ID
-	char charID = player->CharID;
-	// set loop start & end per character
-	if (charID == Characters_Sonic) { characterBitStart = 0, characterBitEnd = 6; }
-	if (charID == Characters_MechTails) { characterBitStart = 6, characterBitEnd = 10; }
-	if (charID == Characters_Knuckles) { characterBitStart = 10; characterBitEnd = 15; }
-	if (charID == Characters_Shadow) { characterBitStart = 16; characterBitEnd = 20; }
-	if (charID == Characters_MechEggman) { characterBitStart = 20; characterBitEnd = 25; }
-	if (charID == Characters_Rouge) { characterBitStart = 25; characterBitEnd = 29; }
+void UpgradeRemover::OnPlayerInit(CharObj2Base* player) {
+	if (player == nullptr) {
+		return;
+	}
+
+	const bool appliedStoryUpgrades = ApplyStoryUpgrades(CurrentLevel, player);
+	if (appliedStoryUpgrades) {
+		storyRestartResetQueued = false;
+		return;
+	}
+
+	if (realTime) {
+		ApplyCurrentUpgradeMask(player);
+	}
+}
+
+bool UpgradeRemover::ApplyCurrentUpgradeMask(CharObj2Base* player) {
+	if (player == nullptr) {
+		return false;
+	}
+
+	UpgradeBitRange range = {};
+	if (!TryGetUpgradeBitRange(player->CharID, range)) {
+		return false;
+	}
+
+	const int upgrades = BuildCurrentUpgradeMask(player->CharID);
+	if (player->Upgrades != upgrades) {
+		player->Upgrades = upgrades;
+	}
+
+	return true;
+}
+
+bool UpgradeRemover::ApplyStoryUpgrades(const short currentLevel, CharObj2Base* player) {
+	if (!storyUpgrades || player == nullptr) {
+		return false;
+	}
 
 	int upgrades = 0;
-	// UpgradesOnFile is an array of 29 booleans, set all the upgrade bits for the character you're playing
-	// i figured this would be more efficient then writing out every upgrade bitfield manually
-	for (int i = characterBitStart; i < characterBitEnd; i++) {
-		upgrades = upgrades | (UpgradesOnFile[i] << i);
+	if (!TryGetStoryMask(currentLevel, upgrades)) {
+		return false;
 	}
-	player->Upgrades = upgrades;
+
+	WriteUpgradeFileFlagsForMask(player->CharID, upgrades);
+	return ApplyCurrentUpgradeMask(player);
 }
 
-void UpgradeRemover::SetStoryUpgrades(short currentLevel, CharObj2Base* player) {
-	if (storyUpgrades) {
-		if (this->StoryUpgradesTable.count(currentLevel) > 0) {
-			char charID = player->CharID;
-			std::vector<bool> upgrades;
-			// grab upgrades from table
-			upgrades = this->StoryUpgradesTable[currentLevel];
-
-			if (charID == Characters_Sonic) { SetSonicUpgrades(upgrades); }
-			else if (charID == Characters_MechTails) { SetTailsUpgrades(upgrades); }
-			else if (charID == Characters_Knuckles) { SetKnuxUpgrades(upgrades); }
-			else if (charID == Characters_Shadow) { SetShadowUpgrades(upgrades); }
-			else if (charID == Characters_MechEggman) { SetEggmanUpgrades(upgrades); }
-			else if (charID == Characters_Rouge) { SetRougeUpgrades(upgrades); }
-
-			// ensure upgrades get set on load/restart
-			this->UpdateRealTime(player);
-		}
-	}
-}
-
-void UpgradeRemover::SetSonicUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		SonicLightShoesGot = upgrades[LightShoes];
-		SonicAncientLightGot = upgrades[Sonic_AncientLight];
-		SonicMagicGlovesGot = upgrades[MagicGloves];
-		SonicFlameRingGot = upgrades[Sonic_FlameRing];
-		SonicBounceBraceletGot = upgrades[BounceBracelet];
-		SonicMysticMelodyGot = upgrades[Sonic_MysticMelody];
-	}
-}
-
-void UpgradeRemover::SetTailsUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		TailsBoosterGot = upgrades[Booster];
-		TailsBazookaGot = upgrades[Bazooka];
-		TailsLaserBlasterGot = upgrades[Tails_LaserBlaster];
-		TailsMysticMelodyGot = upgrades[Tails_MysticMelody];
-	}
-}
-
-void UpgradeRemover::SetKnuxUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		KnucklesShovelClawGot = upgrades[ShovelClaws];
-		KnucklesSunglassesGot = upgrades[Sunglasses];
-		KnucklesHammerGlovesGot = upgrades[HammerGloves];
-		KnucklesAirNecklaceGot = upgrades[AirNecklace];
-		KnucklesMysticMelodyGot = upgrades[Knux_MysticMelody];
-	}
-}
-
-void UpgradeRemover::SetShadowUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		ShadowAirShoesGot = upgrades[AirShoes];
-		ShadowAncientLightGot= upgrades[Shadow_AncientLight];
-		ShadowFlameRingGot = upgrades[Shadow_FlameRing];
-		ShadowMysticMelodyGot = upgrades[Shadow_MysticMelody];
-	}
-}
-
-void UpgradeRemover::SetEggmanUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		EggmanJetEngineGot = upgrades[JetEngine];
-		EggmanLargeCannonGot = upgrades[LargeCannon];
-		EggmanLaserBlasterGot = upgrades[Eggman_LaserBlaster];
-		EggmanProtectiveArmorGot = upgrades[ProtectiveArmor];
-		EggmanMysticMelodyGot = upgrades[Eggman_MysticMelody];
-	}
-}
-
-void UpgradeRemover::SetRougeUpgrades(std::vector<bool> upgrades) {
-	if (!upgrades.empty()) {
-		RougePickNailsGot = upgrades[PickNails];
-		RougeTreasureScopeGot = upgrades[TreasureScope];
-		RougeIronBootsGot = upgrades[IronBoots];
-		RougeMysticMelodyGot = upgrades[Rouge_MysticMelody];
+void UpgradeRemover::ApplyPendingRestartUpgradeReset(CharObj2Base* player) {
+	if (!storyRestartResetQueued) {
+		return;
 	}
 
+	storyRestartResetQueued = false;
+	ApplyStoryUpgrades(CurrentLevel, player);
 }
 
 void UpgradeRemover::RenderTab() {
 	if (ImGui::CollapsingHeader("Upgrades")) {
+		bool applyRealTimeUpgrades = false;
+
 		if (ImGui::BeginTable("", 2)) {
-			ImGui::TableNextColumn(); ImGui::Checkbox("Real-time Updates", &realTime);
+			ImGui::TableNextColumn();
+			if (ImGui::Checkbox("Real-time Updates", &realTime) && realTime) {
+				applyRealTimeUpgrades = true;
+			}
 			ImGui::SameLine();
 			Utils::HelpMarker("If checked, upgrade changes will immediately be reflected in-game.");
-			ImGui::TableNextColumn(); ImGui::Checkbox("Story Upgrades", &storyUpgrades);
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Story Upgrades", &storyUpgrades);
 			ImGui::SameLine();
 			Utils::HelpMarker("If checked, upon entering a stage or restarting while holding Y, your upgrades will be set to match story conditions.");
 			ImGui::EndTable();
 		}
-		ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+
+		const ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
 		if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
 			if (ImGui::BeginTabItem("Sonic")) {
-				SonicTab();
+				applyRealTimeUpgrades |= SonicTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Tails")) {
-				TailsTab();
+				applyRealTimeUpgrades |= TailsTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Knuckles")) {
-				KnucklesTab();
+				applyRealTimeUpgrades |= KnucklesTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Shadow")) {
-				ShadowTab();
+				applyRealTimeUpgrades |= ShadowTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Eggman")) {
-				EggmanTab();
+				applyRealTimeUpgrades |= EggmanTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Rouge")) {
-				RougeTab();
+				applyRealTimeUpgrades |= RougeTab();
 				ImGui::EndTabItem();
 			}
+
 			ImGui::EndTabBar();
+		}
+
+		if (applyRealTimeUpgrades && realTime) {
+			ApplyCurrentUpgradeMask(MainCharObj2[0]);
 		}
 	}
 }
 
-void UpgradeRemover::SonicTab() {
+bool UpgradeRemover::SonicTab() {
+	bool changed = false;
 
 	if (ImGui::BeginTable("Sonic", 2)) {
-		ImGui::TableNextColumn(); ImGui::Checkbox("Light Shoes", &SonicLightShoesGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &SonicAncientLightGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Magic Gloves", &SonicMagicGlovesGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &SonicFlameRingGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Bounce Bracelet", &SonicBounceBraceletGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &SonicMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Light Shoes", &SonicLightShoesGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Ancient Light", &SonicAncientLightGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Magic Gloves", &SonicMagicGlovesGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Flame Ring", &SonicFlameRingGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Bounce Bracelet", &SonicBounceBraceletGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &SonicMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
 
-void UpgradeRemover::TailsTab() {
+bool UpgradeRemover::TailsTab() {
+	bool changed = false;
+
 	if (ImGui::BeginTable("Tails", 2)) {
-		ImGui::TableNextColumn(); ImGui::Checkbox("Booster", &TailsBoosterGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Bazooka", &TailsBazookaGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &TailsLaserBlasterGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &TailsMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Booster", &TailsBoosterGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Bazooka", &TailsBazookaGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Laser Blaster", &TailsLaserBlasterGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &TailsMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
 
-void UpgradeRemover::KnucklesTab() {
+bool UpgradeRemover::KnucklesTab() {
+	bool changed = false;
+
 	if (ImGui::BeginTable("Knuckles", 2)) {
-		ImGui::TableNextColumn(); ImGui::Checkbox("Shovel Claw", &KnucklesShovelClawGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Sunglasses", &KnucklesSunglassesGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Hammer Gloves", &KnucklesHammerGlovesGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Air Necklace", &KnucklesAirNecklaceGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &KnucklesMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Shovel Claw", &KnucklesShovelClawGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Sunglasses", &KnucklesSunglassesGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Hammer Gloves", &KnucklesHammerGlovesGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Air Necklace", &KnucklesAirNecklaceGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &KnucklesMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
 
-void UpgradeRemover::ShadowTab() {
+bool UpgradeRemover::ShadowTab() {
+	bool changed = false;
+
 	if (ImGui::BeginTable("Shadow", 2)) {
-		// note: shadow skips a byte???
-		ImGui::TableNextColumn(); ImGui::Checkbox("Air Shoes", &ShadowAirShoesGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Ancient Light", &ShadowAncientLightGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Flame Ring", &ShadowFlameRingGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &ShadowMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Air Shoes", &ShadowAirShoesGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Ancient Light", &ShadowAncientLightGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Flame Ring", &ShadowFlameRingGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &ShadowMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
 
-void UpgradeRemover::EggmanTab() {
+bool UpgradeRemover::EggmanTab() {
+	bool changed = false;
+
 	if (ImGui::BeginTable("Eggman", 2)) {
-		ImGui::TableNextColumn(); ImGui::Checkbox("Jet Engine", &EggmanJetEngineGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Large Cannon", &EggmanLargeCannonGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Laser Blaster", &EggmanLaserBlasterGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Protective Armor", &EggmanProtectiveArmorGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &EggmanMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Jet Engine", &EggmanJetEngineGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Large Cannon", &EggmanLargeCannonGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Laser Blaster", &EggmanLaserBlasterGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Protective Armor", &EggmanProtectiveArmorGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &EggmanMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
 
-void UpgradeRemover::RougeTab() {
+bool UpgradeRemover::RougeTab() {
+	bool changed = false;
+
 	if (ImGui::BeginTable("Rouge", 2)) {
-		ImGui::TableNextColumn(); ImGui::Checkbox("Pick Nails", &RougePickNailsGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Treasure Scope", &RougeTreasureScopeGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Iron Boots", &RougeIronBootsGot);
-		ImGui::TableNextColumn(); ImGui::Checkbox("Mystic Melody", &RougeMysticMelodyGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Pick Nails", &RougePickNailsGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Treasure Scope", &RougeTreasureScopeGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Iron Boots", &RougeIronBootsGot);
+		ImGui::TableNextColumn(); changed |= ImGui::Checkbox("Mystic Melody", &RougeMysticMelodyGot);
 		ImGui::EndTable();
 	}
+
+	return changed;
 }
