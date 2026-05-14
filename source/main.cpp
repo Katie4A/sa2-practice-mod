@@ -26,7 +26,7 @@ extern "C"
 	{
 
 		HelperFunctions HelperFunctionsGlobal = helperFunctions;
-		
+
 		std::string modpath(path);
 		const IniFile* config = new IniFile(modpath + "\\config.ini");
 		bool useMultiViewports = config->getBool("GeneralSettings", "multiEnabled", false);
@@ -64,13 +64,13 @@ extern "C"
 			f_death->RenderTab();
 			settings->RenderTab();
 			huntingSettings->RenderTab();
-			
+
 			ImGui::Text("Press F1 to toggle the windows on or off.\n(Does not work when windows are undocked)");
 
 			// tess
 			// ImGui::ShowDemoWindow();
 			//ImGui::Text("Holy shit its level id %d", CurrentLevel);
-			
+
 			ImGui::End();
 		}
 	}
@@ -91,12 +91,12 @@ extern "C"
 	}
 
 	__declspec(dllexport) void __cdecl OnFrame()
-	{	
+	{
 		if (GameState == GameStates_Loading && upgradeR->storyUpgradesToggleStatus()) {
 			upgradeR->SetStoryUpgrades(CurrentLevel, MainCharObj2[0]);
 		}
 
-		if ((GameState == GameStates_LoadFinished or GameState == GameStates_Ingame or GameState == GameStates_Pause) && upgradeR->realtimeUpgradesToggleStatus()) {
+		if ((GameState == GameStates_LoadFinished || GameState == GameStates_Ingame || GameState == GameStates_Pause) && upgradeR->realtimeUpgradesToggleStatus()) {
 			upgradeR->UpdateRealTime(MainCharObj2[0]);
 		}
 
@@ -124,7 +124,7 @@ extern "C"
 	{
 		upgradeR->OnControl();
 	}
-	
+
 	__declspec(dllexport) ModInfo SA2ModInfo = { ModLoaderVer }; // This is needed for the Mod Loader to recognize the DLL.
 }
 
