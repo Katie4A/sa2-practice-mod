@@ -10,6 +10,7 @@ DataArray(bool, UpgradesOnFile, 0x1DEB300, 29);
 class UpgradeRemover {
 	public:
 		UpgradeRemover() {};
+		void InitUpgradeObjectHooks();
 		void OnControl();
 		void OnPlayerInit(CharObj2Base* player);
 		bool ApplyCurrentUpgradeMask(CharObj2Base* player);

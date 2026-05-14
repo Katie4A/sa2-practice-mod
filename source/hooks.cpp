@@ -46,6 +46,10 @@ void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus) {
 	g_settings = s;
 	g_displayMenus = displayMenus;
 
+	if (g_upgradeR != nullptr) {
+		g_upgradeR->InitUpgradeObjectHooks();
+	}
+
 	wndProcHook.Hook(wndProc_h);
 	hRestartLevel.Hook(RestartLevel);
 	hkart_delete.Hook(kart_delete);

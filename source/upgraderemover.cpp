@@ -11,6 +11,15 @@ namespace {
 		int mask;
 	};
 
+	constexpr int UpgradeObjectFlagCount = UpgradeBits_RougeMysticMelody + 1;
+	static_assert(UpgradeObjectFlagCount == 29, "Unexpected SA2 upgrade flag count.");
+
+	FunctionHook<int, int> levelItemMainHook((intptr_t)LevelItem_Main);
+	bool upgradeObjectFlags[UpgradeObjectFlagCount] = {};
+	bool upgradeObjectHooksInitialized = false;
+	const void* jumpBackToLevelItemLoad = (void*)0x6D8653;
+	const void* jumpBackToLevelItemUpgradeLoad = (void*)0x6D865F;
+
 	constexpr StoryUpgradeEntry StoryUpgradeMasks[] = {
 		// Sonic story stages. Most runners skip Flame Ring via a Crazy Gadget skip of some kind.
 		{ LevelIDs_CityEscape, 0 },
@@ -84,6 +93,73 @@ namespace {
 		}
 	}
 
+	void SyncAllUpgradeObjectFlagsFromSaveFlags() {
+		for (int i = 0; i < UpgradeObjectFlagCount; ++i) {
+			upgradeObjectFlags[i] = UpgradesOnFile[i];
+		}
+	}
+
+	void SyncUpgradeObjectFlagRange(const UpgradeBitRange& range) {
+		for (int i = range.start; i < range.end && i < UpgradeObjectFlagCount; ++i) {
+			upgradeObjectFlags[i] = UpgradesOnFile[i];
+		}
+	}
+
+	void SyncUpgradeObjectFlagsForCharacter(const char charID) {
+		UpgradeBitRange range = {};
+		if (TryGetUpgradeBitRange(charID, range)) {
+			SyncUpgradeObjectFlagRange(range);
+		}
+	}
+
+	void MarkCollectedUpgradeObjectsFromMask(const int mask) {
+		for (int i = 0; i < UpgradeObjectFlagCount; ++i) {
+			if ((mask & (1 << i)) != 0) {
+				UpgradesOnFile[i] = true;
+				upgradeObjectFlags[i] = true;
+			}
+		}
+	}
+
+	bool CharacterHasUpgrade(const unsigned int upgrade) {
+		if (upgrade >= UpgradeObjectFlagCount) {
+			return false;
+		}
+
+		return upgradeObjectFlags[upgrade];
+	}
+
+	__declspec(naked) void UpgradeItemComparison() {
+		__asm {
+			push	eax
+			call	CharacterHasUpgrade
+			cmp		eax, 0
+			pop		eax
+			pop		edi
+			jz		UPGRADE_RETURN
+			jmp		jumpBackToLevelItemLoad
+
+UPGRADE_RETURN:
+			jmp		jumpBackToLevelItemUpgradeLoad
+		}
+	}
+
+	int LevelItemMain_Hook(int object) {
+		CharObj2Base* player = MainCharObj2[0];
+		const bool hadPlayer = player != nullptr;
+		const int previousUpgrades = player != nullptr ? player->Upgrades : 0;
+		const int result = levelItemMainHook.Original(object);
+
+		SyncAllUpgradeObjectFlagsFromSaveFlags();
+
+		player = MainCharObj2[0];
+		if (hadPlayer && player != nullptr) {
+			MarkCollectedUpgradeObjectsFromMask(player->Upgrades & ~previousUpgrades);
+		}
+
+		return result;
+	}
+
 	// In SA2, some upgrades are shared by multiple characters in save-file state.
 	// If an upgrade is enabled for both characters, it remains on until both are off,
 	// regardless of whether the currently loaded character can use that upgrade.
@@ -113,7 +189,9 @@ namespace {
 		}
 
 		for (int i = range.start; i < range.end; ++i) {
-			UpgradesOnFile[i] = (mask & (1 << i)) != 0;
+			const bool hasUpgrade = (mask & (1 << i)) != 0;
+			UpgradesOnFile[i] = hasUpgrade;
+			upgradeObjectFlags[i] = hasUpgrade;
 		}
 	}
 
@@ -127,6 +205,21 @@ namespace {
 
 		return false;
 	}
+}
+
+void UpgradeRemover::InitUpgradeObjectHooks() {
+	if (upgradeObjectHooksInitialized) {
+		return;
+	}
+
+	SyncAllUpgradeObjectFlagsFromSaveFlags();
+	WriteJump((void*)0x6D8649, &UpgradeItemComparison);
+	for (unsigned short i = 0; i < 5; ++i) {
+		WriteData<1>((void*)(0x6D864E + i), 0x90u);
+	}
+
+	levelItemMainHook.Hook(LevelItemMain_Hook);
+	upgradeObjectHooksInitialized = true;
 }
 
 bool UpgradeRemover::QueueStoryRestartReset() {
@@ -151,6 +244,8 @@ void UpgradeRemover::OnPlayerInit(CharObj2Base* player) {
 		return;
 	}
 
+	SyncUpgradeObjectFlagsForCharacter(player->CharID);
+
 	const bool appliedStoryUpgrades = ApplyStoryUpgrades(CurrentLevel, player);
 	if (appliedStoryUpgrades) {
 		storyRestartResetQueued = false;
@@ -171,6 +266,8 @@ bool UpgradeRemover::ApplyCurrentUpgradeMask(CharObj2Base* player) {
 	if (!TryGetUpgradeBitRange(player->CharID, range)) {
 		return false;
 	}
+
+	SyncUpgradeObjectFlagRange(range);
 
 	const int upgrades = BuildCurrentUpgradeMask(player->CharID);
 	if (player->Upgrades != upgrades) {
@@ -206,12 +303,14 @@ void UpgradeRemover::ApplyPendingRestartUpgradeReset(CharObj2Base* player) {
 void UpgradeRemover::RenderTab() {
 	if (ImGui::CollapsingHeader("Upgrades")) {
 		bool applyRealTimeUpgrades = false;
+		bool upgradeStateChanged = false;
 
 		if (ImGui::BeginTable("", 2)) {
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("Real-time Updates", &realTime) && realTime) {
 				applyRealTimeUpgrades = true;
 			}
+
 			ImGui::SameLine();
 			Utils::HelpMarker("If checked, upgrade changes will immediately be reflected in-game.");
 			ImGui::TableNextColumn();
@@ -224,31 +323,47 @@ void UpgradeRemover::RenderTab() {
 		const ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
 		if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
 			if (ImGui::BeginTabItem("Sonic")) {
-				applyRealTimeUpgrades |= SonicTab();
+				const bool changed = SonicTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Tails")) {
-				applyRealTimeUpgrades |= TailsTab();
+				const bool changed = TailsTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Knuckles")) {
-				applyRealTimeUpgrades |= KnucklesTab();
+				const bool changed = KnucklesTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Shadow")) {
-				applyRealTimeUpgrades |= ShadowTab();
+				const bool changed = ShadowTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Eggman")) {
-				applyRealTimeUpgrades |= EggmanTab();
+				const bool changed = EggmanTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Rouge")) {
-				applyRealTimeUpgrades |= RougeTab();
+				const bool changed = RougeTab();
+				upgradeStateChanged |= changed;
+				applyRealTimeUpgrades |= changed;
 				ImGui::EndTabItem();
 			}
 
 			ImGui::EndTabBar();
+		}
+
+		if (upgradeStateChanged) {
+			SyncAllUpgradeObjectFlagsFromSaveFlags();
 		}
 
 		if (applyRealTimeUpgrades && realTime) {
