@@ -12,6 +12,7 @@ namespace {
 	};
 
 	constexpr StoryUpgradeEntry StoryUpgradeMasks[] = {
+		// Sonic story stages. Most runners skip Flame Ring via a Crazy Gadget skip of some kind.
 		{ LevelIDs_CityEscape, 0 },
 		{ LevelIDs_MetalHarbor, 0 },
 		{ LevelIDs_GreenForest, Upgrades_SonicLightShoes },
@@ -19,13 +20,16 @@ namespace {
 		{ LevelIDs_CrazyGadget, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
 		{ LevelIDs_FinalRush, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
 		{ LevelIDs_CannonsCoreS, Upgrades_SonicLightShoes | Upgrades_SonicBounceBracelet },
+		// Consider boss stages later
 
+		// Tails story stages.
 		{ LevelIDs_PrisonLane, 0 },
 		{ LevelIDs_MissionStreet, 0 },
 		{ LevelIDs_HiddenBase, Upgrades_TailsBooster },
 		{ LevelIDs_EternalEngine, Upgrades_TailsBooster },
 		{ LevelIDs_CannonsCoreT, Upgrades_TailsBooster },
 
+		// Knuckles story stages.
 		{ LevelIDs_WildCanyon, 0 },
 		{ LevelIDs_PumpkinHill, 0 },
 		{ LevelIDs_AquaticMine, Upgrades_KnucklesShovelClaw },
@@ -33,11 +37,13 @@ namespace {
 		{ LevelIDs_MeteorHerd, Upgrades_KnucklesShovelClaw | Upgrades_KnucklesHammerGloves },
 		{ LevelIDs_CannonsCoreK, Upgrades_KnucklesShovelClaw | Upgrades_KnucklesHammerGloves },
 
+		// Shadow does not collect upgrades in a story run.
 		{ LevelIDs_RadicalHighway, 0 },
 		{ LevelIDs_WhiteJungle, 0 },
 		{ LevelIDs_SkyRail, 0 },
 		{ LevelIDs_FinalChase, 0 },
 
+		// Eggman story stages. Mystic Melody is obtained if you do sandwalking.
 		{ LevelIDs_IronGate, 0 },
 		{ LevelIDs_SandOcean, 0 },
 		{ LevelIDs_LostColony, Upgrades_EggmanMysticMelody },
@@ -45,6 +51,7 @@ namespace {
 		{ LevelIDs_CosmicWall, Upgrades_EggmanJetEngine | Upgrades_EggmanMysticMelody },
 		{ LevelIDs_CannonsCoreE, Upgrades_EggmanJetEngine | Upgrades_EggmanMysticMelody },
 
+		// Rouge story stages. Players often skip Iron Boots in Mad Space; assume they grab them anyway.
 		{ LevelIDs_DryLagoon, 0 },
 		{ LevelIDs_EggQuarters, 0 },
 		{ LevelIDs_SecurityHall, Upgrades_RougePickNails },
@@ -77,12 +84,18 @@ namespace {
 		}
 	}
 
+	// In SA2, some upgrades are shared by multiple characters in save-file state.
+	// If an upgrade is enabled for both characters, it remains on until both are off,
+	// regardless of whether the currently loaded character can use that upgrade.
+	// The game only sets bitfields for the character you're playing, so do the same.
 	int BuildCurrentUpgradeMask(const char charID) {
 		UpgradeBitRange range = {};
 		if (!TryGetUpgradeBitRange(charID, range)) {
 			return 0;
 		}
 
+		// UpgradesOnFile is an array of 29 booleans. Convert only the current
+		// character's save-file range into the player object's upgrade bitfield.
 		int mask = 0;
 		for (int i = range.start; i < range.end; ++i) {
 			if (UpgradesOnFile[i]) {
@@ -126,6 +139,8 @@ bool UpgradeRemover::QueueStoryRestartReset() {
 }
 
 void UpgradeRemover::OnControl() {
+	// Inputs during restart are awkward: assume holding Y at any point during the restart
+	// state means the player wants story upgrades restored once the character is initialized.
 	if (GameState == GameStates_NormalRestart && ControllerPointers[0] != nullptr && (ControllerPointers[0]->on & Buttons_Y)) {
 		QueueStoryRestartReset();
 	}
