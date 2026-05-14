@@ -43,8 +43,7 @@ void Settings::RenderTab() {
 		if (ImGui::InputScalar("Deaths/Restarts", ImGuiDataType_S16, &restartDeathCounter, NULL, NULL, "%d")) {
 			if (restartDeathCounter < 0) {
 				restartDeathCounter = 0;
-			}
-			else if (restartDeathCounter > 99) {
+			} else if (restartDeathCounter > 99) {
 				restartDeathCounter = 99;
 			}
 		}
