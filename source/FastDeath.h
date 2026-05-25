@@ -8,7 +8,7 @@ class FastDeath {
 public:
 	FastDeath();
 	void OnInput();
-	void KillPlayerOld(int levelID);
+	//void KillPlayerOld(int levelID);
 	void KillPlayer();
 	void RenderTab();
 private:

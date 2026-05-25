@@ -9,13 +9,16 @@
 #include "FastDeath.h"
 #include "Inifile.hpp"
 #include "hunting.h"
+#include "MonitorWindow.h"
 
 extern "C"
 {
 	static UpgradeRemover upgradeR;
+	static MonitorWindow monitorWindow;
 	static Settings settings;
 	static FastDeath f_death;
 	static HuntingSettings huntingSettings;
+	
 	static bool displayMenus = true;
 	static bool prevF1Press = false;
 	static bool imguiDx9DeviceObjectsValid = false;
@@ -67,11 +70,14 @@ extern "C"
 
 			upgradeR.RenderTab();
 			f_death.RenderTab();
+			monitorWindow.RenderTab();
 			settings.RenderTab();
 			huntingSettings.RenderTab();
 
 			ImGui::Text("Press F1 to toggle the windows on or off.\n(Does not work when windows are undocked)");
 			ImGui::End();
+
+			monitorWindow.drawMonitorWindow();
 		}
 	}
 
