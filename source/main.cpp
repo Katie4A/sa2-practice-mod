@@ -50,6 +50,7 @@ extern "C"
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
 		initHooks(&upgradeR, &settings, &displayMenus);
+		settings.Init();
 
 		huntingSettings.init();
 	}
