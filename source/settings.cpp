@@ -103,6 +103,10 @@ void Settings::OnFrame() {
  * If colliding with crates as a hunting character, apply no contact flag to child crate object.
  * This prevents the child "crate falling" invisible object from being able to be registered with
  * the character as an object that forces a turn without messing with normal forced-turn physics.
+ * 
+ * @author Luna
+ * @see https://github.com/StarlitLuna/sa2-box-glitch-fix
+ * @copyright GPL-3.0-or-later
  */
 void Settings::CrateObjectCollisionHelper_Hook(ObjectMaster* obj) {
 	if (
