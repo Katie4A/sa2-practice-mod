@@ -119,7 +119,6 @@ void Settings::CrateObjectCollisionHelper_Hook(ObjectMaster* obj) {
 
 		for (size_t i = 0; i < collisionInfo->Count; i++) {
 			CollisionData *shape = &collisionInfo->CollisionArray[i];
-
 			if ((shape->attr & Settings::NoContactChildFlag) != 0) {
 				continue;
 			}
