@@ -6,16 +6,47 @@
 // checkpoint function hooks
 FunctionHook<void> Checkpoint_Save_Current_Player((intptr_t)0x43E520);
 
-void CheckpointSave_Hook() {
-	
+//void CheckpointSave_Hook() {
+//
+//}
+
+static uint32_t RNGSeed = 0;
+static uint32_t totalRNGCalls = 0;
+static uint32_t rngCallsThisFrame = 0;
+static bool queueRNGIterReset = false;
+
+// rng function hooks
+FunctionHook<int> hrand((intptr_t)0x007a89d8);
+FunctionHook<void, uint32_t> hrand_seed((intptr_t)0x007a89c6);
+
+
+int g_rand() {
+	int result = hrand.Original();
+	totalRNGCalls++;
+	rngCallsThisFrame++;
+	return result;
 }
 
-void MonitorWindow::OnFrame() {
-	if (GameState == GameStates_Ingame) {
-		// has the player hit a checkpoint?
-
-	}
+void g_rand_seed(uint32_t param_1) {
+	hrand_seed.Original(param_1);
+	RNGSeed = param_1;
+	queueRNGIterReset = true;
 }
+
+MonitorWindow::MonitorWindow() {
+	hrand.Hook(g_rand);
+	hrand_seed.Hook(g_rand_seed); 
+}
+
+void MonitorWindow::ResetRNGIterCount() {
+	totalRNGCalls = 0;
+	rngCallsThisFrame = 0;
+	queueRNGIterReset = false;
+}
+
+//void MonitorWindow::OnFrame() {
+//
+//}
 
 void MonitorWindow::drawMonitorWindow() {
 	if (!OSD_show) {
@@ -23,9 +54,12 @@ void MonitorWindow::drawMonitorWindow() {
 	}
 	
 	// i have no idea where this is gonna draw
-	ImGui::SetNextWindowPos(ImVec2(ceil(HorizontalResolution - (HorizontalResolution / (4))), 10), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+	//ImGui::SetNextWindowPos(ImVec2(ceil(HorizontalResolution - (HorizontalResolution / (4))), 10), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+	const ImVec2 region = ImGui::GetContentRegionAvail();
+	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x * 3.0f, main_viewport->WorkPos.y + 30), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	ImGui::Begin("Monitor", nullptr,
-				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
 					ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDecoration);
 	if (OSD_displayFrameCount) {
 		drawFrameCounter();
@@ -45,6 +79,9 @@ void MonitorWindow::drawMonitorWindow() {
 	if (OSD_displayStatusBitfield) {
 		drawStatusBitfield();
 	}
+	if (OSD_displayPathDist) {
+		drawPathDist();
+	}
 	if (OSD_displayInputs) {
 		drawInputs();
 	}
@@ -54,7 +91,6 @@ void MonitorWindow::drawMonitorWindow() {
 
 	ImGui::End();
 }
-
 
 /*
 	Displays the player's checkpoint times through the stage
@@ -128,11 +164,32 @@ void MonitorWindow::drawInputs() {
 }
 
 void MonitorWindow::drawFrameCounter() {
-	ImGui::Text("Frame Counter: %0d", FrameCount);
+	ImGui::Text("Frame Counter: %0d, mod 1024: %0d", FrameCount, FrameCount % 1024);
 }
 
-void MonitorWindow::drawRNGValue() {
 
+// when loading a stage, rng is seeded with value 0xDEAD0CAB
+// _rand is ran for everything wanting to make something random
+// hence we count the number of times rng has been called.
+// we also display how many rng calls were done in a given frame.
+void MonitorWindow::drawRNGValue() {
+	if (queueRNGIterReset) {
+		ResetRNGIterCount();
+	}
+	
+	//ImGui::Text("Initial RNG Seed: 0x%0X", RNGSeed);
+	
+	//ImGui::Text("RNG pointer!! 0x%X 0x%X", RNGState_ptr, *RNGState_ptr);
+	// arithmetic with pointers multiples value by size of data type
+	uint32_t* v0 = RNGState_ptr + (0x5D4 / sizeof(uint32_t));
+	uint32_t RNGState;
+	memcpy(&RNGState, v0, sizeof(uint32_t));
+	ImGui::Text("RNG State: 0x%0X", RNGState);
+	if 
+	
+	ImGui::Text("")
+	ImGui::Text("RNG Iterations: %0d - per frame: %0d", totalRNGCalls, rngCallsThisFrame);
+	rngCallsThisFrame = 0;
 }
 
 void MonitorWindow::clearCheckTimes()
@@ -161,6 +218,7 @@ void MonitorWindow::RenderTab() {
 		ImGui::SameLine();
 		Utils::HelpMarker("If checked, displays the character's current state ID.");
 		ImGui::Checkbox("Status Bitfield", &OSD_displayStatusBitfield);
+		ImGui::Checkbox("Path Distance", &OSD_displayPathDist);
 		ImGui::Checkbox("Inputs", &OSD_displayInputs);
 
 		ImGui::Checkbox("RNG Value", &OSD_displayRNG);

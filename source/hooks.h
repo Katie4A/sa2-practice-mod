@@ -7,7 +7,7 @@
 class UpgradeRemover;
 class Settings;
 
-void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus);
+void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus, const bool* displayMonitorWindow);
 
 void RestartLevel();
 void kart_delete();

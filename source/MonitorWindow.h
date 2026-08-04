@@ -5,6 +5,10 @@
 #include <vector>
 #include <bitset>
 
+// RNG state pointer
+// no idea if this changes when pracmod is on
+DataPointer(uint32_t*, RNGState_ptr, 0x01751FF4);
+
 struct checkpointTime {
 	char minutes;
 	char seconds;
@@ -13,11 +17,11 @@ struct checkpointTime {
 
 class MonitorWindow {
 public:
-	MonitorWindow() { };
+	MonitorWindow();
+	void ResetRNGIterCount();
 	void OnFrame();
 	void RenderTab();
 	void drawMonitorWindow();
-	void drawTime();
 	void drawCheckpointTime();
 	void drawPos();
 	void drawPathDist();
@@ -40,5 +44,6 @@ private:
 	bool OSD_displayRNG = false;
 	bool OSD_displayFrameCount = false;
 	bool OSD_displayStatusBitfield = false;
+	bool OSD_displayPathDist = false;
 	std::vector<checkpointTime> checkpointTimes;
 };

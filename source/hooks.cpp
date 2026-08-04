@@ -13,9 +13,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 UpgradeRemover* g_upgradeR = nullptr;
 Settings* g_settings = nullptr;
 static const bool* g_displayMenus = nullptr;
+static const bool* g_displayMonitorWindow = nullptr;
 
 LRESULT __stdcall wndProc_h(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam) {
 	if (g_displayMenus != nullptr && *g_displayMenus && ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wParam, lParam)) {
+		return true;
+	}
+	if (g_displayMonitorWindow != nullptr && *g_displayMonitorWindow && ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wParam, lParam)) {
 		return true;
 	}
 
@@ -41,10 +45,11 @@ void SetPhysicsAndGiveUpgrades_Hook(ObjectMaster* character, int playerIndex) {
 	g_upgradeR->OnPlayerInit(player);
 }
 
-void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus) {
+void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus, const bool* displayMonitorWindow) {
 	g_upgradeR = u;
 	g_settings = s;
 	g_displayMenus = displayMenus;
+	g_displayMonitorWindow = displayMonitorWindow;
 
 	if (g_upgradeR != nullptr) {
 		g_upgradeR->InitUpgradeObjectHooks();

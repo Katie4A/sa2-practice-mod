@@ -19,8 +19,10 @@ extern "C"
 	static FastDeath f_death;
 	static HuntingSettings huntingSettings;
 	
-	static bool displayMenus = true;
+	static bool displayMainMenus = true;
+	static bool displayMonitorWindow = true;
 	static bool prevF1Press = false;
+	static bool prevF2Press = false;
 	static bool imguiDx9DeviceObjectsValid = false;
 
 	static bool HasValidImGuiDx9Texture() {
@@ -52,13 +54,13 @@ extern "C"
 		ImGui_ImplWin32_Init(MainWindowHandle);
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
-		initHooks(&upgradeR, &settings, &displayMenus);
+		initHooks(&upgradeR, &settings, &displayMainMenus, &displayMonitorWindow);
 
 		huntingSettings.init();
 	}
 
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {
-		if (displayMenus) {
+		if (displayMainMenus) {
 			ImGui_ImplDX9_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
@@ -77,12 +79,14 @@ extern "C"
 			ImGui::Text("Press F1 to toggle the windows on or off.\n(Does not work when windows are undocked)");
 			ImGui::End();
 
-			monitorWindow.drawMonitorWindow();
+			if (displayMonitorWindow) {
+				monitorWindow.drawMonitorWindow();
+			}
 		}
 	}
 
 	__declspec(dllexport) void __cdecl OnRenderSceneEnd() {
-		if (displayMenus) {
+		if (displayMainMenus) {
 			ImGui::Render();
 			ImDrawData* drawData = ImGui::GetDrawData();
 			ImGui_ImplDX9_RenderDrawData(drawData);
@@ -104,17 +108,28 @@ extern "C"
 		if (settings.NeedsFrameTick()) {
 			settings.OnFrame();
 		}
+		//monitorWindow.OnFrame();
 	}
 
 	__declspec(dllexport) void __cdecl OnInput() {
 		bool F1Press = GetKeyState(VK_F1) & 0x8000;
 		if (F1Press && !prevF1Press) {
-			displayMenus = !displayMenus;
+			displayMainMenus = !displayMainMenus;
 			prevF1Press = true;
 		}
 		else if (!F1Press) {
 			prevF1Press = false;
 		}
+
+		bool F2Press = GetKeyState(VK_F2) & 0x8000;
+		if (F2Press && !prevF2Press) {
+			displayMonitorWindow = !displayMonitorWindow;
+			prevF2Press = true;
+		}
+		else if (!F1Press) {
+			prevF2Press = false;
+		}
+
 
 		f_death.OnInput();
 	}
