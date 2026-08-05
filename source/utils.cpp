@@ -11,6 +11,7 @@ namespace Utils {
             }
             return false;
         }
+        return false;
     }
     
     void HelpMarker(const char* desc)
