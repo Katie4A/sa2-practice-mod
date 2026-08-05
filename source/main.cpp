@@ -55,7 +55,7 @@ extern "C"
 		ImGui_ImplWin32_Init(MainWindowHandle);
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
-		initHooks(&upgradeR, &settings, &monitorWindow, &displayMainMenus, &displayMonitorWindow);
+		initHooks(&upgradeR, &settings, &displayMenus);
 
 		huntingSettings.init(&monitorWindow);
 	}

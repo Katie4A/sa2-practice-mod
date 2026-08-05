@@ -30,4 +30,9 @@ public:
 	bool ppSkipToggleStatus();
 	bool NeedsFrameTick() const;
 	void OnFrame();
+	void Init();
+
+	// With this flag child objects of this object won't be prioritized for contact
+	static const uint32_t NoContactChildFlag = 0x04;
+	static void CrateObjectCollisionHelper_Hook(ObjectMaster* obj);
 };
