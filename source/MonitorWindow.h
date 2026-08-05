@@ -7,6 +7,7 @@
 
 // RNG state pointer
 // no idea if this changes when pracmod is on
+// magic number offset is 0x5D4 bytes
 DataPointer(uint32_t*, RNGState_ptr, 0x01751FF4);
 
 struct checkpointTime {
@@ -19,7 +20,6 @@ class MonitorWindow {
 public:
 	MonitorWindow();
 	void ResetRNGIterCount();
-	void OnFrame();
 	void RenderTab();
 	void drawMonitorWindow();
 	void drawCheckpointTime();
@@ -31,9 +31,9 @@ public:
 	void drawInputs();
 	void drawFrameCounter();
 	void drawRNGValue();
+	void setEmeraldFrameCount(uint32_t f);
 private:
 	void clearCheckTimes();
-
 	bool OSD_show = false;
 	bool OSD_displayTime = false;
 	bool OSD_displayCheckpointTime = false;
@@ -46,4 +46,5 @@ private:
 	bool OSD_displayStatusBitfield = false;
 	bool OSD_displayPathDist = false;
 	std::vector<checkpointTime> checkpointTimes;
+	uint32_t setFrameCount = 0;
 };

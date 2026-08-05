@@ -1,7 +1,8 @@
 #pragma once
 #include "pch.h"
+#include "MonitorWindow.h"
 
-
+class MonitorWindow;
 
 struct Fvec3 {
     float x;
@@ -10,7 +11,8 @@ struct Fvec3 {
 };
 
 struct Emerald {
-    int id;
+    short id;
+    unsigned short gap;
     struct Fvec3 position;
 };
 
@@ -42,13 +44,12 @@ struct SearchEmeraldsGameManager {
     unsigned char field24_0x72;
     unsigned char field25_0x73;
 };
-
-
+DataPointer(SearchEmeraldsGameManager*, EmeraldManager, 0x1AF014C);
 
 class HuntingSettings {
 public:
     HuntingSettings() {}
-    void init();
+    void init(MonitorWindow* m);
     void RenderTab();
 };
 

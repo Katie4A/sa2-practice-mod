@@ -13,6 +13,7 @@
 
 extern "C"
 {
+	
 	static UpgradeRemover upgradeR;
 	static MonitorWindow monitorWindow;
 	static Settings settings;
@@ -54,9 +55,9 @@ extern "C"
 		ImGui_ImplWin32_Init(MainWindowHandle);
 		ImGui_ImplDX9_Init(g_pRenderDevice->m_pD3DDevice);
 		ImGui::StyleColorsDark();
-		initHooks(&upgradeR, &settings, &displayMainMenus, &displayMonitorWindow);
+		initHooks(&upgradeR, &settings, &monitorWindow, &displayMainMenus, &displayMonitorWindow);
 
-		huntingSettings.init();
+		huntingSettings.init(&monitorWindow);
 	}
 
 	__declspec(dllexport) void __cdecl OnRenderSceneStart() {

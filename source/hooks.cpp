@@ -12,6 +12,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 UpgradeRemover* g_upgradeR = nullptr;
 Settings* g_settings = nullptr;
+MonitorWindow* g_monitor = nullptr;
 static const bool* g_displayMenus = nullptr;
 static const bool* g_displayMonitorWindow = nullptr;
 
@@ -45,9 +46,10 @@ void SetPhysicsAndGiveUpgrades_Hook(ObjectMaster* character, int playerIndex) {
 	g_upgradeR->OnPlayerInit(player);
 }
 
-void initHooks(UpgradeRemover* u, Settings* s, const bool* displayMenus, const bool* displayMonitorWindow) {
+void initHooks(UpgradeRemover* u, Settings* s, MonitorWindow* m, const bool* displayMenus, const bool* displayMonitorWindow) {
 	g_upgradeR = u;
 	g_settings = s;
+	g_monitor = m;
 	g_displayMenus = displayMenus;
 	g_displayMonitorWindow = displayMonitorWindow;
 
@@ -81,3 +83,4 @@ void kart_delete() {
 		ppSkipTimer = 0;
 	}
 }
+

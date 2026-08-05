@@ -3,7 +3,11 @@
 #include <vector>
 #include <random>
 
+// i am so sorry for this abomination of a solution dumpster
+MonitorWindow* g_monitor2 = nullptr;
+
 //most code taken from the lab mod's minimum set cover functions
+static uint32_t setFrameCount = 0;
 static bool useSetCoverSets = 0;
 static int lastLevel = -1;
 static std::random_device rd;
@@ -24,7 +28,8 @@ std::vector<int> min_sets_ms = { 0,1,2,3,87,739,6,7,14,16,293,29,70,119,122,128,
 
 
 
-void HuntingSettings::init() {
+void HuntingSettings::init(MonitorWindow* m) {
+	g_monitor2 = m;
 	hGenerateSet.Hook(generateSet_impl);
 	//initialize rng
 	gen = std::mt19937(rd());
@@ -97,5 +102,6 @@ void generateSet_impl(SearchEmeraldsGameManager* emeraldManager) {
 		FrameCount += nextSet;
 		PrintDebug("Next set: %d", nextSet);
 	}
+	g_monitor2->setEmeraldFrameCount(FrameCount);
 	hGenerateSet.Original(emeraldManager);
 }

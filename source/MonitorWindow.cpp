@@ -1,5 +1,6 @@
 #include "MonitorWindow.h"
 
+
 // This monitor window was largely inspired by Prime's Practice Mod
 // https://github.com/MetroidPrimeModding/prime-practice-native/blob/main/src/UI/MonitorWindow.cpp
 
@@ -19,7 +20,6 @@ static bool queueRNGIterReset = false;
 FunctionHook<int> hrand((intptr_t)0x007a89d8);
 FunctionHook<void, uint32_t> hrand_seed((intptr_t)0x007a89c6);
 
-
 int g_rand() {
 	int result = hrand.Original();
 	totalRNGCalls++;
@@ -36,6 +36,10 @@ void g_rand_seed(uint32_t param_1) {
 MonitorWindow::MonitorWindow() {
 	hrand.Hook(g_rand);
 	hrand_seed.Hook(g_rand_seed); 
+}
+
+void MonitorWindow::setEmeraldFrameCount(uint32_t f) {
+	setFrameCount = f % 1024;
 }
 
 void MonitorWindow::ResetRNGIterCount() {
@@ -57,7 +61,7 @@ void MonitorWindow::drawMonitorWindow() {
 	//ImGui::SetNextWindowPos(ImVec2(ceil(HorizontalResolution - (HorizontalResolution / (4))), 10), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 	const ImVec2 region = ImGui::GetContentRegionAvail();
-	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x * 3.0f, main_viewport->WorkPos.y + 30), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 30, main_viewport->WorkPos.y + 30), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	ImGui::Begin("Monitor", nullptr,
 				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
 					ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoDecoration);
@@ -164,7 +168,8 @@ void MonitorWindow::drawInputs() {
 }
 
 void MonitorWindow::drawFrameCounter() {
-	ImGui::Text("Frame Counter: %0d, mod 1024: %0d", FrameCount, FrameCount % 1024);
+	// apparently the values here are inaccurate by 2 here when drawn :/
+	ImGui::Text("Frame Counter: %0d, mod 1024: %0d", FrameCount+2, (FrameCount+2) % 1024);
 }
 
 
@@ -185,9 +190,11 @@ void MonitorWindow::drawRNGValue() {
 	uint32_t RNGState;
 	memcpy(&RNGState, v0, sizeof(uint32_t));
 	ImGui::Text("RNG State: 0x%0X", RNGState);
-	if 
 	
-	ImGui::Text("")
+	if (Utils::inHunting()) {
+		ImGui::Text("Set Frame: %0d", setFrameCount);
+	}
+	
 	ImGui::Text("RNG Iterations: %0d - per frame: %0d", totalRNGCalls, rngCallsThisFrame);
 	rngCallsThisFrame = 0;
 }
